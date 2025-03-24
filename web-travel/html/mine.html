@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心 - 旅游系统</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/mine.css">
+</head>
+<body>
+    <!-- 复用相同的导航栏 -->
+    <nav class="top_nav">
+        <!-- 与index.html相同的导航栏代码 -->
+    </nav>
+
+    <main class="mine-container">
+        <h2>个人中心</h2>
+        <div class="user-info">
+            <div class="user-avatar">
+                <img src="images/default-avatar.png" alt="用户头像">
+            </div>
+            <div class="user-details">
+                <h3>用户名: <span id="username">用户123</span></h3>
+                <p>邮箱: <span id="userEmail">user@example.com</span></p>
+                <button id="editProfileBtn">编辑资料</button>
+            </div>
+        </div>
+
+        <h3>我的日志</h3>
+        <div class="logs-list" id="myLogsList">
+            <!-- 用户的日志将通过JS动态加载 -->
+        </div>
+    </main>
+
+    <script src="js/auth.js"></script>
+    <script src="js/mine.js"></script>
+</body>
+</html>
