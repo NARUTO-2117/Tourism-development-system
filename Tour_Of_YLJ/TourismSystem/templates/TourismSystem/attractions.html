@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>旅游系统 - 景点详情</title>
+    <link rel="stylesheet" href="{% static 'TourismSystem/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'TourismSystem/atteaction.css' %}">
+    <!-- <script type="text/javascript" src="https://api.map.baidu.com/api?v=3.0&ak=您的密钥"></script> -->
+</head>
+<body>
+    <!-- 复用相同的导航栏 -->
+    <nav class="top_nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <a href="index.html">首页</a>
+                <a href="attractions.html" class="logo">旅游系统</a>
+                <a href="log.html">日志</a>
+            </div>
+            <div class="nav-center">
+                <div class="search-box">
+                    <input type="text" placeholder="搜索目的地...">
+                    <button type="submit"><i class="search-icon"></i></button>
+                </div>
+            </div>
+            <div class="nav-right">
+                <div class="user-profile" id="userProfile">
+                    <div class="user-avatar" id="userAvatar">
+                        <img src="images/default-avatar.png" alt="用户头像">
+                    </div>
+                    <div class="user-dropdown" id="userDropdown">
+                        <a href="login.html" id="loginLink">登录</a>
+                        <a href="mine.html" id="profileLink" style="display: none;">个人中心</a>
+                        <a href="#" id="logoutBtn" style="display: none;">退出登录</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="attractions-container">
+        <div class="left-panel">
+            <div class="combined-panel">
+                <div class="list-container">
+                    <h3>景点列表</h3>
+                    <div id="attractionsList">
+                        <!-- 动态加载景点列表 -->
+                    </div>
+                </div>
+                <div class="separator"></div>
+                <div class="selected-panel">
+                    <h3>已选景点</h3>
+                    <div id="selectedAttractions">
+                        <!-- 用户选中的景点 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="right-panel">
+            <div class="map-container" id="map"></div>
+        </div>
+    </main>
+
+    <script src="js/auth.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/attractions.js"></script>
+</body>
+</html>
