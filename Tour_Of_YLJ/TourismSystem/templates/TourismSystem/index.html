@@ -1,11 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>旅游系统</title>
-    <link rel="stylesheet" href="{% static 'TourismSystem/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'TourismSystem/style.css' %}">
     <link rel="stylesheet" href="{% static 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css.css' %}">
 </head>
 <body>
@@ -27,16 +27,17 @@
             </div>
             <div class="nav-right">
                 <div class="user-profile" id="userProfile">
-                    <div class="user-avatar" id="userAvatar">
-                        <img src="images/default-avatar.png" alt="用户头像">
-                    </div>
+                    <!-- <div class="user-avatar" id="userAvatar"> -->
+                        <!-- <img src="images/default-avatar.png" alt="用户头像"> -->
+                    <!-- </div> -->
                     <div class="user-dropdown" id="userDropdown">
                         <!-- 登录 -->
-                        <a href="{% url 'login' %}" id="loginLink">登录</a>
+                        <!-- <a href="{% url 'login' %}" id="loginLink">登录</a> -->
                         <!-- 个人中心，默认隐藏 -->
-                        <a href="{% url 'mine' %}" id="profileLink" style="display: none;">个人中心</a>
+                        <!-- <a href="{% url 'mine' %}" id="profileLink" style="display: none;">个人中心</a> -->
                         <!-- 退出登录，默认隐藏 -->
-                        <a href="{% url 'logout' %}" id="logoutBtn" style="display: none;">退出登录</a>
+                        <!-- <a href="{% url 'logout' %}" id="logoutBtn" style="display: none;">退出登录</a> -->
+                        <a href="{% url 'logout' %}" id="logoutBtn" >退出登录</a>
                     </div>
                 </div>
             </div>
