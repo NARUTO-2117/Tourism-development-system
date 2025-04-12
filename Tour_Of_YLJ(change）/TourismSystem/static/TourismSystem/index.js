@@ -28,3 +28,4 @@ async function fetchCityRankings() {
         console.error('Error fetching city rankings:', error);
     }
 }
+

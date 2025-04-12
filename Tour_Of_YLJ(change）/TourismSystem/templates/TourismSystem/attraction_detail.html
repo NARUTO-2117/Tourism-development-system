@@ -1,0 +1,59 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ spot.name }} - 旅游系统</title>
+    <link rel="stylesheet" href="{% static 'TourismSystem/style.css' %}">
+    <link rel="stylesheet" href="{% static 'TourismSystem/attractions.css' %}">
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="top_nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <a href="{% url 'index' %}">首页</a>
+                <a href="{% url 'attractions' %}" class="logo">旅游系统</a>
+                <a href="{% url 'log' %}">日志</a>
+                <a href="{% url 'mine' %}">我的</a>
+            </div>
+            <div class="nav-right">
+                <div class="user-profile">
+                    <a href="{% url 'logout' %}" id="logoutBtn">退出登录</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 景点详情内容 -->
+    <main class="attraction-detail-container">
+        <div class="attraction-header">
+            <h1>{{ spot.name }}</h1>
+            <div class="attraction-meta">
+                <span class="category">分类：{{ spot.category }}</span>
+                <span class="epithet">称号：{{ spot.epithet }}</span>
+                <span class="popularity">人气：{{ spot.popularity }}</span>
+                <span class="rating">评分：{{ spot.rating }}</span>
+            </div>
+        </div>
+
+        <div class="attraction-content">
+            <!-- 这里可以添加更多景点详情内容 -->
+            <div class="attraction-description">
+                <h2>景点介绍</h2>
+                <p>这里是景点的详细介绍内容...</p>
+            </div>
+
+            <div class="attraction-images">
+                <h2>景点图片</h2>
+                <div class="image-gallery">
+                    <!-- 这里可以添加景点图片 -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="{% static 'TourismSystem/attractions.js' %}"></script>
+</body>
+</html> 

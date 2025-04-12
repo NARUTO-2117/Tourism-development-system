@@ -30,3 +30,4 @@ def logout_view(request):
         "message": "Logged out."
     })
 
+

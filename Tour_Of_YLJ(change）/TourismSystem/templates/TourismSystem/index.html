@@ -6,7 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>旅游系统</title>
     <link rel="stylesheet" href="{% static 'TourismSystem/style.css' %}">
+    <link rel="stylesheet" href="{% static 'TourismSystem/main.css' %}">
     <link rel="stylesheet" href="{% static 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css.css' %}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
     <!-- 顶部导航栏 -->
@@ -18,14 +20,92 @@
                 <a href="{% url 'log' %}">日志</a>
                 <a href="{% url 'mine' %}">我的</a>
             </div>
-            <div class="nav-center">
+            <div class="search_con fr">
                 <div class="search-box">
-                    <input type="text" placeholder="搜索目的地...">
-                    <button type="submit" class="search-btn">
-                        <i class="fas fa-search" style="color: white;"></i>
-                    </button>
+                    <input type="text" class="input_text" id="top_search" placeholder="搜索景点" autocomplete="off">
+                    <div class="search_tips_con" id="search_tips_con" style="display: none;">
+                        <ul>
+                            <!-- 搜索结果将在这里动态显示 -->
+                        </ul>
+                    </div>
                 </div>
             </div>
+            <script>
+                // 获取CSRF令牌的函数，用于Django的CSRF保护
+                function getCookie(name) {
+                    let cookieValue = null;
+                    if (document.cookie && document.cookie !== '') {
+                        const cookies = document.cookie.split(';');
+                        for (let i = 0; i < cookies.length; i++) {
+                            const cookie = cookies[i].trim();
+                            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                break;
+                            }
+                        }
+                    }
+                    return cookieValue;
+                }
+
+                // 执行搜索的函数
+                function performSearch(val) {
+                    // 如果搜索值为空，隐藏搜索结果并返回
+                    if(!val){
+                        $("#search_tips_con").hide();
+                        return false;
+                    }
+                    // 发送AJAX请求到服务器
+                    $.ajax({
+                        url: '/TourismSystem/',  // 请求的URL
+                        method: 'POST',          // 请求方法
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken')  // 添加CSRF令牌
+                        },
+                        data: {
+                            'q': val  // 发送搜索关键词
+                        },
+                        success: function(res){
+                            console.log(res); // 调试用
+                            if(res.code === 200){
+                                var htmlStr = '<ul>';
+                                if(res.data && res.data.length > 0){
+                                    // 如果有搜索结果，遍历并生成HTML
+                                    res.data.forEach(function(item){
+                                        htmlStr += '<li><a href="/TourismSystem/attractions/' + item.id + '">' + item.name + '</a></li>';
+                                    });
+                                } else {
+                                    // 如果没有搜索结果，显示提示信息
+                                    htmlStr += '<li><a href="javascript:;">没有搜索到内容</a></li>';
+                                }
+                                htmlStr += '</ul>';
+                                // 将生成的HTML插入到页面中并显示
+                                $("#search_tips_con").html(htmlStr).show();
+                            }
+                        },
+                        error: function(xhr, status, error){
+                            console.error('搜索出错:', error);
+                        }
+                    });
+                }
+
+                $(document).ready(function(){
+                    // 修改前：使用keypress事件，只在按下回车键时触发搜索
+                    // $('#top_search').on('keypress', function(e){
+                    //     if(e.which === 13) { // 13是回车键的keyCode
+                    //         e.preventDefault();
+                    //         var val = $(this).val();
+                    //         performSearch(val);
+                    //     }
+                    // });
+
+                    // 修改后：使用input事件，实现实时搜索
+                    // 每当输入框内容发生变化时都会触发搜索
+                    $('#top_search').on('input', function(){
+                        var val = $(this).val();
+                        performSearch(val);
+                    });
+                });
+            </script>
             <div class="nav-right">
                 <div class="user-profile" id="userProfile">
                     <!-- <div class="user-avatar" id="userAvatar"> -->
@@ -53,23 +133,58 @@
             <div class="city-ranking">
                 <h2>热门城市排行</h2>
                 <div class="ranking-list-container">
+                    {% if spots_1_list %}
                     <ul id="cityRankList" class="ranking-list">
-                        <!-- 动态加载城市列表 -->
+                        {% for spots in spots_1_list %}
+                            <li><a href="/TourismSystem/attractions/{{ spots.id }}">{{ spots.name }}</a></li>
+                        {% endfor %}  
                     </ul>
+                    {% else %}
+                        <p>No spots are available.</p>
+                    {% endif %}
                 </div>
             </div>
             
             <!-- 右侧内容区域 -->
             <div class="activity-showcase">
                 <div class="image-container">
-                    <img src="images/showcase.jpg" alt="旅游风景展示" id="showcaseImage">
+                    <img src="{% static 'TourismSystem/images/image1.jpg' %}" alt="旅游风景展示" id="showcaseImage">
                 </div>
             </div>
         </div>
     </main>
+    <script>
+    const IMAGES = [
+        "{% static 'TourismSystem/images/image1.jpg' %}",
+        "{% static 'TourismSystem/images/image2.jpg' %}",
+        "{% static 'TourismSystem/images/image3.jpg' %}",
+        "{% static 'TourismSystem/images/image4.jpg' %}"
+    ];
+    // 获取图片元素，假设图片元素的id为 'scenery-image'
+    const sceneryImage = document.getElementById('showcaseImage');
+    // 当前显示图片的索引，初始为0
+    let currentIndex = 0;
 
-    <script src="{% static 'TourismSystem/auth.js' %}"></script>
+    // 定义切换图片的函数
+    function changeImage() {
+        // 将当前图片的src属性设置为数组中当前索引对应的图片URL
+        sceneryImage.src = IMAGES[currentIndex];
+        // 索引加1
+        currentIndex++;
+        // 如果索引超出数组长度，将索引重置为0
+        if (currentIndex >= 4) {
+            currentIndex = 0;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        changeImage();
+        setInterval(changeImage, 5000);
+    }); 
+    </script>
     <script src="{% static 'TourismSystem/index.js' %}"></script>
+    <script src="{% static 'TourismSystem/auth.js' %}"></script>
+    <!-- <script src="{% static 'TourismSystem/index.js' %}"></script> -->
 </body>
 </html>
 
