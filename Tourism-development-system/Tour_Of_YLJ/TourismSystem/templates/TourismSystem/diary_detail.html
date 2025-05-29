@@ -1,0 +1,55 @@
+{% extends "TourismSystem/base.html" %}
+{% block content %}
+<div class="diary-detail-container">
+    <h2>{{ diary.title }}</h2>
+    <div class="diary-meta">
+        <span>作者：{{ diary.author.username }}</span> |
+        <span>景点：<a href="{% url 'attraction_detail' diary.attraction.id %}">{{ diary.attraction.name }}</a></span> |
+        <span>评分：
+            {% for i in "12345" %}
+                {% if i|add:'0' <= diary.rating|stringformat:"d" %}
+                    <span style="color:#FFD700">&#9733;</span>
+                {% else %}
+                    <span style="color:#ccc">&#9733;</span>
+                {% endif %}
+            {% endfor %}
+            ({{ diary.rating }}/5)
+        </span> |
+        <span>热度：{{ diary.popularity }}</span> |
+        <span>创建时间：{{ diary.created_at|date:"Y-m-d H:i" }}</span>
+    </div>
+    <div class="diary-image">
+        {% if diary.image %}
+            <img src="{{ diary.image.url }}" alt="日记图片" style="max-width:400px;max-height:300px;">
+        {% endif %}
+    </div>
+    <div class="diary-content" style="margin: 20px 0;">
+        <p>{{ diary.content|linebreaksbr }}</p>
+    </div>
+    <div class="diary-actions">
+        <form method="post" action="{% url 'diary_like' diary.id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-primary">
+                👍 点赞 ({{ diary.likes.count }})
+            </button>
+        </form>
+    </div>
+    <hr>
+    <div class="diary-comments">
+        <h4>评论 ({{ diary.comments.count }})</h4>
+        {% for comment in diary.comments.all %}
+            <div class="comment-item" style="margin-bottom:10px;">
+                <b>{{ comment.author.username }}</b>：{{ comment.content }}
+                <span style="color:#888;font-size:0.9em;">({{ comment.created_at|date:"Y-m-d H:i" }})</span>
+            </div>
+        {% empty %}
+            <p>暂无评论，快来抢沙发！</p>
+        {% endfor %}
+        <form method="post" action="{% url 'diary_comment' diary.id %}">
+            {% csrf_token %}
+            <textarea name="content" rows="2" placeholder="写下你的评论..." required style="width:100%;margin-top:10px;"></textarea>
+            <button type="submit" class="btn btn-success" style="margin-top:5px;">发表评论</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

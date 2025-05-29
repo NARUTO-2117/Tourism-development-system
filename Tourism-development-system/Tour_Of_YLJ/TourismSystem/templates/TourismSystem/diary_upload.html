@@ -1,0 +1,57 @@
+{% extends "TourismSystem/base.html" %}
+{% block content %}
+<style>
+.rating-stars {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-start;
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+.rating-stars input[type="radio"] {
+    display: none;
+}
+.rating-stars label {
+    color: #ccc;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.rating-stars input[type="radio"]:checked ~ label,
+.rating-stars label:hover,
+.rating-stars label:hover ~ label {
+    color: #FFD700;
+}
+</style>
+<div class="diary-upload-container">
+    <h2>上传日记 - {{ attraction.name }}</h2>
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.title.label_tag }} {{ form.title }}
+        <br>
+        {{ form.content.label_tag }} {{ form.content }}
+        <br>
+        {{ form.image.label_tag }} {{ form.image }}
+        <br>
+        <label>评分：</label>
+        <div class="rating-stars">
+            {% for i in "54321" %}
+                <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}" {% if form.rating.value|stringformat:"s" == i %}checked{% endif %}>
+                <label for="star{{ i }}">&#9733;</label>
+            {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-primary">提交</button>
+        <a href="{% url 'attraction_detail' attraction.id %}" class="btn btn-secondary">取消</a>
+    </form>
+    {% if diary %}
+        <p>您已上传过该景点的日记。</p>
+        {% if diary.can_modify_rating %}
+            <p>您还可以修改一次评分。</p>
+        {% else %}
+            <p>评分已不可修改。</p>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

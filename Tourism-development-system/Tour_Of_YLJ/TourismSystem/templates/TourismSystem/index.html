@@ -1,0 +1,477 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>旅游系统首页</title>
+    <link rel="stylesheet" href="{% static 'TourismSystem/style.css' %}">
+    <link rel="stylesheet" href="{% static 'TourismSystem/main.css' %}">
+    <style>
+        body {
+            background: linear-gradient(135deg, #e3f0ff 0%, #fafcff 100%);
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        .top_nav {
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(60,64,67,0.08);
+            padding: 0 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+        .nav-left a {
+            color: #1a73e8;
+            text-decoration: none;
+            font-size: 1.1rem;
+            margin-right: 32px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-left a.logo {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1765c1;
+            margin-right: 40px;
+        }
+        .nav-left a:hover {
+            color: #1765c1;
+        }
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .input_text {
+            padding: 10px 16px;
+            border: 1px solid #dadce0;
+            border-radius: 24px;
+            font-size: 1rem;
+            background: #f8fafc;
+            outline: none;
+            transition: border-color 0.2s;
+            width: 220px;
+        }
+        .input_text:focus {
+            border-color: #1a73e8;
+            background: #fff;
+        }
+        .search_tips_con {
+            position: absolute;
+            top: 40px;
+            left: 0;
+            width: 100%;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(60,64,67,0.12);
+            z-index: 10;
+        }
+        .search_tips_con ul {
+            margin: 0;
+            padding: 8px 0;
+            list-style: none;
+        }
+        .search_tips_con li a {
+            display: block;
+            padding: 8px 20px;
+            color: #333;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .search_tips_con li a:hover {
+            background: #f1f3f4;
+        }
+        .nav-right {
+            display: flex;
+            align-items: center;
+        }
+        .user-profile {
+            display: flex;
+            align-items: center;
+        }
+        .user-dropdown a {
+            color: #1a73e8;
+            text-decoration: none;
+            font-size: 1rem;
+            margin-left: 16px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .user-dropdown a:hover {
+            color: #1765c1;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 40px auto 0 auto;
+            display: flex;
+            flex-direction: column;
+            min-height: 70vh;
+        }
+        .content-wrapper {
+            display: flex;
+            gap: 40px;
+        }
+        .city-ranking {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(60,64,67,0.12);
+            padding: 32px 24px;
+            min-width: 260px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .city-ranking h2 {
+            color: #1a73e8;
+            font-size: 1.4rem;
+            margin-bottom: 22px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .ranking-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+        }
+        .ranking-list li {
+            margin-bottom: 14px;
+        }
+        .ranking-list li a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #333;
+            text-decoration: none;
+            font-size: 1.08rem;
+            padding: 10px 18px;
+            border-radius: 8px;
+            transition: background 0.2s, color 0.2s;
+            font-weight: 500;
+            box-shadow: 0 1px 4px rgba(60,64,67,0.06);
+            background: #f8fafc;
+        }
+        .ranking-list li a:hover {
+            background: #e3f0ff;
+            color: #1a73e8;
+        }
+        .activity-showcase {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(60,64,67,0.10);
+            padding: 24px 32px;
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .image-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+        .image-container img {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(60,64,67,0.10);
+        }
+        .hot-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            margin-top: 32px;
+        }
+        .hot-card {
+            width: 260px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(60,64,67,0.08);
+            padding: 18px;
+            transition: box-shadow 0.2s;
+        }
+        .hot-card:hover {
+            box-shadow: 0 4px 16px rgba(60,64,67,0.15);
+        }
+        .hot-card img {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .hot-card h3 {
+            margin: 12px 0 6px 0;
+            font-size: 1.15em;
+        }
+        .hot-card .meta {
+            margin-top: 8px;
+            font-size: 0.98em;
+            color: #888;
+        }
+        .carousel-container {
+            width: 100%;
+            max-width: 900px;
+            margin: 32px auto 0 auto;
+            position: relative;
+            overflow: hidden;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(60,64,67,0.10);
+        }
+        .carousel-slides {
+            display: flex;
+            transition: transform 0.5s;
+            width: 100%;
+        }
+        .carousel-slide {
+            min-width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+            background: #fff;
+        }
+        .carousel-slide img {
+            width: 100%;
+            height: 320px;
+            object-fit: cover;
+            border-radius: 16px 16px 0 0;
+        }
+        .carousel-caption {
+            padding: 16px;
+        }
+        .carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.7);
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            z-index: 2;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+        }
+        .carousel-btn.left { left: 12px; }
+        .carousel-btn.right { right: 12px; }
+        @media (max-width: 900px) {
+            .content-wrapper {
+                flex-direction: column;
+                gap: 24px;
+            }
+            .main-container {
+                margin: 20px auto 0 auto;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="top_nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <a href="{% url 'index' %}">首页</a>
+                <a href="{% url 'attractions' %}" class="logo">旅游系统</a>
+                <a href="{% url 'log' %}">日志</a>
+                <a href="{% url 'mine' %}">我的</a>
+            </div>
+            <div class="search_con fr">
+                <div class="search-box">
+                    <input type="text" class="input_text" id="top_search" placeholder="搜索景点" autocomplete="off">
+                    <div class="search_tips_con" id="search_tips_con" style="display: none;">
+                        <ul>
+                            <!-- 搜索结果将在这里动态显示 -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <script>
+                // 获取CSRF令牌的函数，用于Django的CSRF保护
+                function getCookie(name) {
+                    let cookieValue = null;
+                    if (document.cookie && document.cookie !== '') {
+                        const cookies = document.cookie.split(';');
+                        for (let i = 0; i < cookies.length; i++) {
+                            const cookie = cookies[i].trim();
+                            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                break;
+                            }
+                        }
+                    }
+                    return cookieValue;
+                }
+
+                // 执行搜索的函数
+                function performSearch(val) {
+                    // 如果搜索值为空，隐藏搜索结果并返回
+                    if(!val){
+                        $("#search_tips_con").hide();
+                        return false;
+                    }
+                    // 发送AJAX请求到服务器
+                    $.ajax({
+                        url: '/TourismSystem/',  // 请求的URL
+                        method: 'POST',          // 请求方法
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken')  // 添加CSRF令牌
+                        },
+                        data: {
+                            'q': val  // 发送搜索关键词
+                        },
+                        success: function(res){
+                            console.log(res); // 调试用
+                            if(res.code === 200){
+                                var htmlStr = '<ul>';
+                                if(res.data && res.data.length > 0){
+                                    // 如果有搜索结果，遍历并生成HTML
+                                    res.data.forEach(function(item){
+                                        htmlStr += '<li><a href="/TourismSystem/attractions/' + item.id + '">' + item.name + '</a></li>';
+                                    });
+                                } else {
+                                    // 如果没有搜索结果，显示提示信息
+                                    htmlStr += '<li><a href="javascript:;">没有搜索到内容</a></li>';
+                                }
+                                htmlStr += '</ul>';
+                                // 将生成的HTML插入到页面中并显示
+                                $("#search_tips_con").html(htmlStr).show();
+                            }
+                        },
+                        error: function(xhr, status, error){
+                            console.error('搜索出错:', error);
+                        }
+                    });
+                }
+
+                $(document).ready(function(){
+                    // 修改前：使用keypress事件，只在按下回车键时触发搜索
+                    // $('#top_search').on('keypress', function(e){
+                    //     if(e.which === 13) { // 13是回车键的keyCode
+                    //         e.preventDefault();
+                    //         var val = $(this).val();
+                    //         performSearch(val);
+                    //     }
+                    // });
+
+                    // 修改后：使用input事件，实现实时搜索
+                    // 每当输入框内容发生变化时都会触发搜索
+                    $('#top_search').on('input', function(){
+                        var val = $(this).val();
+                        performSearch(val);
+                    });
+                });
+            </script>
+            <div class="nav-right">
+                <div class="user-profile" id="userProfile">
+                    <!-- <div class="user-avatar" id="userAvatar"> -->
+                        <!-- <img src="images/default-avatar.png" alt="用户头像"> -->
+                    <!-- </div> -->
+                    <div class="user-dropdown" id="userDropdown">
+                        <!-- 登录 -->
+                        <!-- <a href="{% url 'login' %}" id="loginLink">登录</a> -->
+                        <!-- 个人中心，默认隐藏 -->
+                        <!-- <a href="{% url 'mine' %}" id="profileLink" style="display: none;">个人中心</a> -->
+                        <!-- 退出登录，默认隐藏 -->
+                        <!-- <a href="{% url 'logout' %}" id="logoutBtn" style="display: none;">退出登录</a> -->
+                        <a href="{% url 'logout' %}" id="logoutBtn" >退出登录</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+
+    <!-- 主要内容区 -->
+    <main class="main-container">
+        <div class="content-wrapper">
+            <!-- 左侧热门城市排名 -->
+            <div class="city-ranking" style="background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(60,64,67,0.12); padding: 32px 24px; min-width: 260px; flex: 1; display: flex; flex-direction: column; align-items: center;">
+                <h2 style="color: #1a73e8; font-size: 1.4rem; margin-bottom: 22px; font-weight: 700; letter-spacing: 1px;">热门城市排行</h2>
+                <div class="ranking-list-container" style="width: 100%;">
+                    {% if spots_1_list %}
+                    <ul id="cityRankList" class="ranking-list" style="list-style: none; padding: 0; margin: 0; width: 100%;">
+                        {% for spots in spots_1_list %}
+                            <li style="margin-bottom: 14px;">
+                                <a href="/TourismSystem/attractions/{{ spots.id }}" style="display: flex; align-items: center; gap: 10px; color: #333; text-decoration: none; font-size: 1.08rem; padding: 10px 18px; border-radius: 8px; transition: background 0.2s, color 0.2s; font-weight: 500; box-shadow: 0 1px 4px rgba(60,64,67,0.06); background: #f8fafc;">
+                                    <span style="background: #e3f0ff; color: #1a73e8; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700;">{{ forloop.counter }}</span>
+                                    <span>{{ spots.name }}</span>
+                                </a>
+                            </li>
+                        {% endfor %}  
+                    </ul>
+                    {% else %}
+                        <p style="color: #d93025; text-align: center;">No spots are available.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- 右侧内容区域 -->
+            <div class="activity-showcase">
+                <div class="image-container">
+                    <img src="{% static 'TourismSystem/images/image1.jpg' %}" alt="旅游风景展示" id="showcaseImage">
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>
+    const IMAGES = [
+        "{% static 'TourismSystem/images/image1.jpg' %}",
+        "{% static 'TourismSystem/images/image2.jpg' %}",
+        "{% static 'TourismSystem/images/image3.jpg' %}",
+        "{% static 'TourismSystem/images/image4.jpg' %}"
+    ];
+    // 获取图片元素，假设图片元素的id为 'scenery-image'
+    const sceneryImage = document.getElementById('showcaseImage');
+    // 当前显示图片的索引，初始为0
+    let currentIndex = 0;
+
+    // 定义切换图片的函数
+    function changeImage() {
+        // 将当前图片的src属性设置为数组中当前索引对应的图片URL
+        sceneryImage.src = IMAGES[currentIndex];
+        // 索引加1
+        currentIndex++;
+        // 如果索引超出数组长度，将索引重置为0
+        if (currentIndex >= 4) {
+            currentIndex = 0;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        changeImage();
+        setInterval(changeImage, 5000);
+    }); 
+    </script>
+    <script src="{% static 'TourismSystem/index.js' %}"></script>
+    <script src="{% static 'TourismSystem/auth.js' %}"></script>
+    <!-- <script src="{% static 'TourismSystem/index.js' %}"></script> -->
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.carousel-slide');
+        const slidesContainer = document.getElementById('carouselSlides');
+        function showSlide(idx) {
+            if (slides.length === 0) return;
+            currentSlide = (idx + slides.length) % slides.length;
+            slidesContainer.style.transform = `translateX(-${currentSlide * 100}%)`;
+        }
+        function moveSlide(step) {
+            showSlide(currentSlide + step);
+        }
+        showSlide(0);
+    </script>
+</body>
+</html>
+
+
+

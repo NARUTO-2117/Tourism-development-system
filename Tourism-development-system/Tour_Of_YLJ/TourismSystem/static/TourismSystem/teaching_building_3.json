@@ -1,0 +1,283 @@
+{
+  "building": {
+    "id": "TB3",
+    "name": "教学楼三",
+    "description": "北京邮电大学教学楼三",
+    "location": {
+      "latitude": 39.9606,
+      "longitude": 116.3586
+    },
+    "floors": {
+      "1": {
+        "name": "一层",
+        "pois": [
+          {
+            "id": "TB3-101",
+            "name": "101教室",
+            "type": "classroom",
+            "location": {
+              "x": 100,
+              "y": 200
+            },
+            "connections": [
+              {
+                "to": "TB3-elevator-1",
+                "distance": 50
+              }
+            ]
+          },
+          {
+            "id": "TB3-102",
+            "name": "102教室",
+            "type": "classroom",
+            "location": {
+              "x": 150,
+              "y": 200
+            },
+            "connections": [
+              {
+                "to": "TB3-elevator-1",
+                "distance": 100
+              }
+            ]
+          },
+          {
+            "id": "TB3-elevator-1",
+            "name": "1号电梯",
+            "type": "elevator",
+            "location": {
+              "x": 50,
+              "y": 150
+            },
+            "connections": [
+              {
+                "to": "TB3-101",
+                "distance": 50
+              },
+              {
+                "to": "TB3-102",
+                "distance": 100
+              }
+            ]
+          }
+        ]
+      },
+      "2": {
+        "name": "二层",
+        "pois": [
+          {
+            "id": "TB3-201",
+            "name": "201教室",
+            "type": "classroom",
+            "location": {
+              "x": 100,
+              "y": 200
+            },
+            "connections": [
+              {
+                "to": "TB3-elevator-1",
+                "distance": 50
+              }
+            ]
+          },
+          {
+            "id": "TB3-202",
+            "name": "202教室",
+            "type": "classroom",
+            "location": {
+              "x": 150,
+              "y": 200
+            },
+            "connections": [
+              {
+                "to": "TB3-elevator-1",
+                "distance": 100
+              }
+            ]
+          },
+          {
+            "id": "TB3-elevator-1",
+            "name": "1号电梯",
+            "type": "elevator",
+            "location": {
+              "x": 50,
+              "y": 150
+            },
+            "connections": [
+              {
+                "to": "TB3-201",
+                "distance": 50
+              },
+              {
+                "to": "TB3-202",
+                "distance": 100
+              }
+            ]
+          }
+        ]
+      },
+      "3": {
+        "name": "三层",
+        "pois": [
+          {
+            "id": "TB3-301",
+            "name": "301教室",
+            "type": "classroom",
+            "location": {
+              "x": 100,
+              "y": 200
+            },
+            "connections": [
+              {
+                "to": "TB3-elevator-1",
+                "distance": 50
+              }
+            ]
+          },
+          {
+            "id": "TB3-302",
+            "name": "302教室",
+            "type": "classroom",
+            "location": {
+              "x": 150,
+              "y": 200
+            },
+            "connections": [
+              {
+                "to": "TB3-elevator-1",
+                "distance": 100
+              }
+            ]
+          },
+          {
+            "id": "TB3-elevator-1",
+            "name": "1号电梯",
+            "type": "elevator",
+            "location": {
+              "x": 50,
+              "y": 150
+            },
+            "connections": [
+              {
+                "to": "TB3-301",
+                "distance": 50
+              },
+              {
+                "to": "TB3-302",
+                "distance": 100
+              }
+            ]
+          }
+        ]
+      },
+      "4": {
+        "name": "四层",
+        "pois": [
+          {
+            "id": "TB3-401",
+            "name": "401教室",
+            "type": "classroom",
+            "location": {
+              "x": 100,
+              "y": 200
+            },
+            "connections": [
+              {
+                "to": "TB3-elevator-1",
+                "distance": 50
+              }
+            ]
+          },
+          {
+            "id": "TB3-402",
+            "name": "402教室",
+            "type": "classroom",
+            "location": {
+              "x": 150,
+              "y": 200
+            },
+            "connections": [
+              {
+                "to": "TB3-elevator-1",
+                "distance": 100
+              }
+            ]
+          },
+          {
+            "id": "TB3-elevator-1",
+            "name": "1号电梯",
+            "type": "elevator",
+            "location": {
+              "x": 50,
+              "y": 150
+            },
+            "connections": [
+              {
+                "to": "TB3-401",
+                "distance": 50
+              },
+              {
+                "to": "TB3-402",
+                "distance": 100
+              }
+            ]
+          }
+        ]
+      },
+      "5": {
+        "name": "五层",
+        "pois": [
+          {
+            "id": "TB3-501",
+            "name": "501教室",
+            "type": "classroom",
+            "location": {
+              "x": 100,
+              "y": 200
+            },
+            "connections": [
+              {
+                "to": "TB3-elevator-1",
+                "distance": 50
+              }
+            ]
+          },
+          {
+            "id": "TB3-502",
+            "name": "502教室",
+            "type": "classroom",
+            "location": {
+              "x": 150,
+              "y": 200
+            },
+            "connections": [
+              {
+                "to": "TB3-elevator-1",
+                "distance": 100
+              }
+            ]
+          },
+          {
+            "id": "TB3-elevator-1",
+            "name": "1号电梯",
+            "type": "elevator",
+            "location": {
+              "x": 50,
+              "y": 150
+            },
+            "connections": [
+              {
+                "to": "TB3-501",
+                "distance": 50
+              },
+              {
+                "to": "TB3-502",
+                "distance": 100
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+} 

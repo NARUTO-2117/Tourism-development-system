@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>旅游系统 - 景点详情</title>
+    <link rel="stylesheet" href="{% static 'TourismSystem/style.css' %}">
+    <link rel="stylesheet" href="{% static 'TourismSystem/attractions.css' %}">
+    <!-- 添加高德地图API -->
+    <script type="text/javascript">
+        window._AMapSecurityConfig = {
+            securityJsCode: '8f16d1c5b8052c3c765769b6d84e74a3',
+        }
+    </script>
+    <script type="text/javascript" src="https://webapi.amap.com/maps?v=2.0&key=fc62e82edc66521f15189e8d43e3d075&plugin=AMap.Geolocation,AMap.IndoorMap,AMap.Driving,AMap.Walking,AMap.PlaceSearch,AMap.AutoComplete"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        .attractions-container {
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+            min-height: calc(100vh - 64px);
+            box-sizing: border-box;
+        }
+        .left-panel {
+            flex: 1;
+            min-width: 300px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        .right-panel {
+            flex: 2;
+            min-width: 600px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        .map-container {
+            width: 100%;
+            height: 600px;
+            position: relative;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            overflow: hidden;
+            background: #f5f5f5;
+        }
+        #map {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .location-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 100;
+            padding: 8px 15px;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .location-btn:hover {
+            background: #f5f5f5;
+        }
+        .floor-switch {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .floor-switch select {
+            padding: 4px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .search-panel {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            width: 300px;
+        }
+        .search-panel input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        .search-panel button {
+            width: 100%;
+            padding: 8px;
+            background: #1a73e8;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .search-panel button:hover {
+            background: #1765c1;
+        }
+        .route-info {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            z-index: 100;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            max-width: 300px;
+        }
+    </style>
+    <!-- <script type="text/javascript" src="https://api.map.baidu.com/api?v=3.0&ak=您的密钥"></script> -->
+</head>
+<body>
+    <!-- 复用相同的导航栏 -->
+    <nav class="top_nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <a href="{% url 'index' %}">首页</a>
+                <a href="{% url 'attractions' %}" class="logo">旅游系统</a>
+                <a href="{% url 'log' %}">日志</a>
+                <a href="{% url 'mine' %}">我的</a>
+            </div>
+            <div class="nav-center">
+                <div class="search-box">
+                    <input type="text" placeholder="搜索目的地...">
+                    <button type="submit"><i class="search-icon"></i></button>
+                </div>
+            </div>
+            <div class="nav-right">
+                <div class="user-profile" id="userProfile">
+                    <!-- <div class="user-avatar" id="userAvatar">
+                        <img src="images/default-avatar.png" alt="用户头像">
+                    </div> -->
+                    <div class="user-dropdown" id="userDropdown">
+                        <!-- 登录 -->
+                        <!-- <a href="{% url 'login' %}" id="loginLink">登录</a> -->
+                        <!-- 个人中心，默认隐藏 -->
+                        <!-- <a href="{% url 'mine' %}" id="profileLink" style="display: none;">个人中心</a> -->
+                        <!-- 退出登录，默认隐藏 -->
+                        <!-- <a href="{% url 'logout' %}" id="logoutBtn" style="display: none;">退出登录</a> -->
+                        <a href="{% url 'logout' %}" id="logoutBtn" >退出登录</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="attractions-container">
+        <div class="left-panel">
+            <div class="combined-panel">
+                <div class="list-container">
+                    <h3>景点列表</h3>
+                    <div id="attractionsList">
+                        <!-- 动态加载景点列表 -->
+                    </div>
+                </div>
+                <div class="separator"></div>
+                <div class="selected-panel">
+                    <h3>已选景点</h3>
+                    <div id="selectedAttractions">
+                        <!-- 用户选中的景点 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="right-panel">
+            <div class="map-container">
+                <div id="map"></div>
+                <button class="location-btn" onclick="getLocation()">定位我的位置</button>
+                <div class="floor-switch">
+                    <select id="floorSelect" onchange="switchFloor(this.value)">
+                        <option value="1">一层</option>
+                        <option value="2">二层</option>
+                        <option value="3">三层</option>
+                        <option value="4">四层</option>
+                        <option value="5">五层</option>
+                    </select>
+                </div>
+                <div class="search-panel">
+                    <input type="text" id="searchInput" placeholder="搜索目的地...">
+                    <button onclick="searchPlace()">搜索</button>
+                </div>
+                <div class="route-info" id="routeInfo" style="display: none;">
+                    <h4>导航信息</h4>
+                    <div id="routeDetails"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="attractions-filter-bar">
+        <form method="get" style="display:flex;gap:12px;align-items:center;">
+            <select name="category">
+                <option value="">全部类别</option>
+                {% for code, name in categories %}
+                    <option value="{{ code }}" {% if code == current_category %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" name="keyword" placeholder="关键字" value="{{ current_keyword }}">
+            <select name="sort">
+                <option value="popularity" {% if sort == "popularity" %}selected{% endif %}>按热度</option>
+                <option value="rating" {% if sort == "rating" %}selected{% endif %}>按评分</option>
+            </select>
+            <button type="submit" class="btn btn-primary">筛选</button>
+        </form>
+    </div>
+    <div class="attractions-list" style="display:flex;flex-wrap:wrap;gap:24px;margin-top:24px;">
+        {% for attraction in page_obj %}
+            <div class="attraction-card" style="width:280px;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(60,64,67,0.08);padding:18px;">
+                <a href="{% url 'attraction_detail' attraction.id %}">
+                    <img src="{{ attraction.cover.url }}" alt="封面图" style="width:100%;height:160px;object-fit:cover;border-radius:8px;">
+                    <h3 style="margin:12px 0 6px 0;">{{ attraction.name }}</h3>
+                </a>
+                <div>
+                    <span style="background:#e3f0ff;color:#1765c1;padding:2px 8px;border-radius:6px;font-size:0.95em;">{{ attraction.get_category_display }}</span>
+                    <span style="background:#f1f3f4;color:#888;padding:2px 8px;border-radius:6px;font-size:0.95em;">{{ attraction.keywords }}</span>
+                </div>
+                <div style="margin-top:8px;">
+                    <span style="color:#f90;">🔥 {{ attraction.popularity }}</span>
+                    <span style="color:#1765c1;margin-left:10px;">⭐ {{ attraction.rating }}/5</span>
+                </div>
+            </div>
+        {% empty %}
+            <p>暂无景点数据。</p>
+        {% endfor %}
+    </div>
+    <div style="margin-top:24px;">
+        <span>共{{ page_obj.paginator.count }}个景点</span>
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?{% if current_category %}category={{ current_category }}&{% endif %}{% if current_keyword %}keyword={{ current_keyword }}&{% endif %}sort={{ sort }}&page={{ page_obj.previous_page_number }}">上一页</a>
+            {% endif %}
+            <span>第{{ page_obj.number }}/{{ page_obj.paginator.num_pages }}页</span>
+            {% if page_obj.has_next %}
+                <a href="?{% if current_category %}category={{ current_category }}&{% endif %}{% if current_keyword %}keyword={{ current_keyword }}&{% endif %}sort={{ sort }}&page={{ page_obj.next_page_number }}">下一页</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <script src="{% static 'TourismSystem/auth.js' %}"></script>
+    <script src="{% static 'TourismSystem/map.js' %}"></script>
+    <script src="{% static 'TourismSystem/attractions.js' %}"></script>
+    <script>
+        // 只保留 window.onload 作为唯一初始化入口
+        window.onload = function() {
+            console.log('页面加载完成，开始初始化地图...');
+            // 检查高德地图API是否加载
+            if (typeof AMap === 'undefined') {
+                console.error('高德地图API未加载');
+                return;
+            }
+            console.log('高德地图API已加载');
+            // 检查地图容器
+            const mapContainer = document.getElementById('map');
+            if (!mapContainer) {
+                console.error('地图容器不存在');
+                return;
+            }
+            console.log('地图容器存在，尺寸:', mapContainer.offsetWidth, 'x', mapContainer.offsetHeight);
+            // 初始化地图
+            console.log('调用 initMap 函数前，initMap 的值:', initMap);
+            // initMap(); // 暂时注释掉 initMap 函数调用
+            console.log('initMap 函数已调用');
+
+            // 直接在 window.onload 中进行地图初始化
+            console.log('开始直接在 window.onload 中初始化地图...');
+
+            if (typeof AMap === 'undefined') {
+                console.error('window.onload: 高德地图API未加载');
+                return;
+            }
+            console.log('window.onload: 高德地图API已加载');
+
+            try {
+                const mapOptions = {
+                    zoom: 16,
+                    center: [116.3586, 39.9606],
+                    viewMode: '3D'
+                };
+                console.log('window.onload: 地图配置:', mapOptions);
+
+                // 使用在 map.js 中声明的全局 map 变量
+                map = new AMap.Map('map', mapOptions);
+                console.log('window.onload: 地图实例创建尝试完成');
+
+                map.on('complete', function() {
+                    console.log('window.onload: 地图加载完成事件触发');
+                    
+                     try {
+                        // 初始化室内地图
+                        const indoorMapOptions = {
+                            zIndex: 100,
+                            opacity: 1
+                        };
+                        console.log('window.onload: 室内地图配置:', indoorMapOptions);
+
+                        // 使用在 map.js 中声明的全局 indoorMap 变量
+                        indoorMap = new AMap.IndoorMap(indoorMapOptions);
+                        map.add(indoorMap);
+                        console.log('window.onload: 室内地图插件初始化成功');
+
+                        // 初始化步行导航
+                        walking = new AMap.Walking({
+                            map: map,
+                            panel: "routeInfo"
+                        });
+                        console.log('window.onload: 步行导航插件初始化成功');
+
+                        // 初始化地点搜索
+                        placeSearch = new AMap.PlaceSearch({
+                            pageSize: 10,
+                            pageIndex: 1,
+                            city: "北京"
+                        });
+                        console.log('window.onload: 地点搜索插件初始化成功');
+
+                        // 初始化自动完成
+                        autoComplete = new AMap.AutoComplete({
+                            city: "北京"
+                        });
+                        console.log('window.onload: 自动完成插件初始化成功');
+
+                        // 添加地图控件
+                        // 确保 addMapControls 函数在全局作用域或在此处可访问
+                        if (typeof addMapControls === 'function') {
+                             addMapControls();
+                             console.log('window.onload: 地图控件添加成功');
+                        } else {
+                             console.error('window.onload: addMapControls 函数未定义');
+                        }
+
+                        // 加载室内地图数据
+                        // 确保 loadIndoorMapData 函数在全局作用域或在此处可访问
+                         if (typeof loadIndoorMapData === 'function') {
+                             loadIndoorMapData();
+                             console.log('window.onload: 开始加载室内地图数据');
+                         } else {
+                             console.error('window.onload: loadIndoorMapData 函数未定义');
+                         }
+
+                    } catch (error) {
+                        console.error('window.onload: 插件初始化失败:', error);
+                    }
+
+                });
+
+                 map.on('error', function(error) {
+                    console.error('window.onload: 地图加载错误:', error);
+                });
+
+
+            } catch (error) {
+                console.error('window.onload: 地图初始化失败:', error);
+            }
+
+
+        };
+    </script>
+</body>
+</html>

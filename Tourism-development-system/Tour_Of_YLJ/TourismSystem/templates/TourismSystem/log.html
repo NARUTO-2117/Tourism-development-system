@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>旅行日志 - 旅游系统</title>
+    <link rel="stylesheet" href="{% static 'TourismSystem/style.css' %}">
+    <link rel="stylesheet" href="{% static 'TourismSystem/log.css' %}">
+    <link rel="stylesheet" href="{% static 'TourismSystem/https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css' %}">
+</head>
+<body>
+    <!-- 复用相同的导航栏 -->
+    <!-- 复用相同的导航栏 -->
+    <nav class="top_nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <a href="{% url 'index' %}">首页</a>
+                <a href="{% url 'attractions' %}" class="logo">旅游系统</a>
+                <a href="{% url 'log' %}">日志</a>
+                <a href="{% url 'mine' %}">我的</a>
+            </div>
+            <div class="nav-center">
+                <div class="search-box">
+                    <input type="text" placeholder="搜索目的地...">
+                    <button type="submit"><i class="search-icon"></i></button>
+                </div>
+            </div>
+            <div class="nav-right">
+                <div class="user-profile" id="userProfile">
+                    <!-- <div class="user-avatar" id="userAvatar">
+                        <img src="images/default-avatar.png" alt="用户头像">
+                    </div> -->
+                    <div class="user-dropdown" id="userDropdown">
+                        <!-- 登录 -->
+                        <!-- <a href="{% url 'login' %}" id="loginLink">登录</a> -->
+                        <!-- 个人中心，默认隐藏 -->
+                        <!-- <a href="{% url 'mine' %}" id="profileLink" style="display: none;">个人中心</a> -->
+                        <!-- 退出登录，默认隐藏 -->
+                        <!-- <a href="{% url 'logout' %}" id="logoutBtn" style="display: none;">退出登录</a> -->
+                        <a href="{% url 'logout' %}" id="logoutBtn" >退出登录</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    {% block content %}
+    <div class="log-container" style="max-width:900px;margin:40px auto;">
+        <h2 style="color:#1765c1;">全部日记</h2>
+        <form method="get" style="display:flex;gap:12px;align-items:center;margin-bottom:18px;">
+            <input type="text" name="keyword" placeholder="搜索标题/内容/景点" value="{{ keyword }}">
+            <select name="sort">
+                <option value="popularity" {% if sort == "popularity" %}selected{% endif %}>按热度</option>
+                <option value="rating" {% if sort == "rating" %}selected{% endif %}>按评分</option>
+                <option value="time" {% if sort == "time" %}selected{% endif %}>按时间</option>
+            </select>
+            <button type="submit" class="btn btn-primary">筛选</button>
+        </form>
+        {% if page_obj %}
+            <table style="width:100%;margin-top:12px;border-collapse:collapse;">
+                <thead>
+                    <tr style="background:#f8fafc;">
+                        <th style="padding:8px;">标题</th>
+                        <th style="padding:8px;">景点</th>
+                        <th style="padding:8px;">作者</th>
+                        <th style="padding:8px;">评分</th>
+                        <th style="padding:8px;">热度</th>
+                        <th style="padding:8px;">创建时间</th>
+                        <th style="padding:8px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for diary in page_obj %}
+                    <tr style="border-bottom:1px solid #eee;">
+                        <td style="padding:8px;">
+                            <a href="{% url 'diary_detail' diary.id %}">{{ diary.title }}</a>
+                        </td>
+                        <td style="padding:8px;">
+                            <a href="{% url 'attraction_detail' diary.attraction.id %}">{{ diary.attraction.name }}</a>
+                        </td>
+                        <td style="padding:8px;">{{ diary.author.username }}</td>
+                        <td style="padding:8px;">{{ diary.rating }}/5</td>
+                        <td style="padding:8px;">{{ diary.popularity }}</td>
+                        <td style="padding:8px;">{{ diary.created_at|date:"Y-m-d H:i" }}</td>
+                        <td style="padding:8px;">
+                            <a href="{% url 'diary_detail' diary.id %}" class="btn btn-sm btn-outline-info">详情</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div style="margin-top:24px;">
+                <span>共{{ page_obj.paginator.count }}条日记</span>
+                <div class="pagination">
+                    {% if page_obj.has_previous %}
+                        <a href="?sort={{ sort }}&keyword={{ keyword }}&page={{ page_obj.previous_page_number }}">上一页</a>
+                    {% endif %}
+                    <span>第{{ page_obj.number }}/{{ page_obj.paginator.num_pages }}页</span>
+                    {% if page_obj.has_next %}
+                        <a href="?sort={{ sort }}&keyword={{ keyword }}&page={{ page_obj.next_page_number }}">下一页</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <p>暂无日记。</p>
+        {% endif %}
+    </div>
+    {% endblock %}
+
+    <!-- 日志模板 -->
+    <template id="logTemplate">
+        <div class="log-item">
+            <div class="log-header">
+                <img src="" alt="" class="author-avatar">
+                <div class="log-info">
+                    <h3 class="log-title"></h3>
+                    <div class="author-info">
+                        <span class="author-name"></span>
+                        <span class="log-date"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="log-content"></div>
+            <div class="log-images"></div>
+            <div class="log-actions">
+                <div class="rating">
+                    <div class="stars">
+                        <i class="fas fa-star" data-rating="1"></i>
+                        <i class="fas fa-star" data-rating="2"></i>
+                        <i class="fas fa-star" data-rating="3"></i>
+                        <i class="fas fa-star" data-rating="4"></i>
+                        <i class="fas fa-star" data-rating="5"></i>
+                    </div>
+                    <span class="rating-count"></span>
+                </div>
+                <button class="like-btn">
+                    <i class="far fa-heart"></i>
+                    <span class="like-count">0</span>
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <script src="{% static 'TourismSystem/auth.js' %}"></script>
+    <script src="{% static 'TourismSystem/log.js' %}"></script>
+</body>
+</html>

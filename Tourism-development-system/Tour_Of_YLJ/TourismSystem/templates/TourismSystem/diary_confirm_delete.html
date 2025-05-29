@@ -1,0 +1,11 @@
+{% extends "TourismSystem/base.html" %}
+{% block content %}
+<div style="max-width:400px;margin:60px auto;text-align:center;">
+    <h3>确定要删除日记《{{ diary.title }}》吗？</h3>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">确认删除</button>
+        <a href="{% url 'mine' %}" class="btn btn-secondary">取消</a>
+    </form>
+</div>
+{% endblock %}

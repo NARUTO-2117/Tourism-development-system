@@ -1,0 +1,226 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ attraction.name }} - 旅游系统</title>
+    <link rel="stylesheet" href="{% static 'TourismSystem/style.css' %}">
+    <link rel="stylesheet" href="{% static 'TourismSystem/attractions.css' %}">
+    <style>
+        body {
+            background: linear-gradient(135deg, #e3f0ff 0%, #fafcff 100%);
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        .top_nav {
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(60,64,67,0.08);
+            padding: 0 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+        .nav-left a {
+            color: #1a73e8;
+            text-decoration: none;
+            font-size: 1.1rem;
+            margin-right: 32px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-left a.logo {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1765c1;
+            margin-right: 40px;
+        }
+        .nav-left a:hover {
+            color: #1765c1;
+        }
+        .user-profile a {
+            color: #1a73e8;
+            text-decoration: none;
+            font-size: 1rem;
+            margin-left: 16px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .user-profile a:hover {
+            color: #1765c1;
+        }
+        .attraction-detail-container {
+            max-width: 900px;
+            margin: 40px auto 0 auto;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(60,64,67,0.12);
+            padding: 40px 36px 32px 36px;
+        }
+        .attraction-header {
+            border-bottom: 1px solid #e3e6ea;
+            margin-bottom: 28px;
+            padding-bottom: 18px;
+        }
+        .attraction-header h1 {
+            font-size: 2.1rem;
+            color: #1a73e8;
+            margin: 0 0 12px 0;
+            font-weight: 700;
+        }
+        .attraction-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            font-size: 1.05rem;
+            color: #5f6368;
+        }
+        .attraction-meta span {
+            background: #f1f3f4;
+            border-radius: 6px;
+            padding: 4px 12px;
+        }
+        .attraction-content {
+            margin-top: 32px;
+        }
+        .attraction-description {
+            margin-bottom: 32px;
+        }
+        .attraction-description h2 {
+            font-size: 1.2rem;
+            color: #1765c1;
+            margin-bottom: 10px;
+        }
+        .attraction-description p {
+            color: #444;
+            line-height: 1.7;
+            font-size: 1.05rem;
+        }
+        .attraction-images h2 {
+            font-size: 1.2rem;
+            color: #1765c1;
+            margin-bottom: 10px;
+        }
+        .image-gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+        }
+        .image-gallery img {
+            max-width: 220px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(60,64,67,0.10);
+            background: #f8fafc;
+        }
+        @media (max-width: 1000px) {
+            .attraction-detail-container {
+                padding: 24px 8vw;
+            }
+        }
+        @media (max-width: 700px) {
+            .attraction-detail-container {
+                padding: 12px 2vw;
+            }
+            .attraction-header h1 {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="top_nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <a href="{% url 'index' %}">首页</a>
+                <a href="{% url 'attractions' %}" class="logo">旅游系统</a>
+                <a href="{% url 'log' %}">日志</a>
+                <a href="{% url 'mine' %}">我的</a>
+            </div>
+            <div class="nav-right">
+                <div class="user-profile">
+                    <a href="{% url 'logout' %}" id="logoutBtn">退出登录</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 景点详情内容 -->
+    <main class="attraction-detail-container">
+        <div class="attraction-header">
+            <h1>{{ attraction.name }}</h1>
+            <div class="attraction-meta">
+                <span class="category">分类：{{ attraction.get_category_display }}</span>
+                <span class="epithet">称号：{{ attraction.epithet }}</span>
+                <span class="popularity">人气：{{ attraction.popularity }}</span>
+                <span class="rating">评分：{{ attraction.rating }}/5 ({{ attraction.rating_count }}人评分)</span>
+                <span class="keywords">关键字：{{ attraction.keywords }}</span>
+            </div>
+        </div>
+
+        <div class="attraction-content">
+            <div class="attraction-description">
+                <h2>景点介绍</h2>
+                <p>{{ attraction.epithet|default:"暂无简介" }}</p>
+            </div>
+
+            <div class="attraction-images">
+                <h2>景点图片</h2>
+                <div class="image-gallery">
+                    {% if attraction.cover %}
+                        <img src="{{ attraction.cover.url }}" alt="封面图">
+                    {% endif %}
+                    {% for diary in diaries %}
+                        {% if diary.image %}
+                            <img src="{{ diary.image.url }}" alt="日记图片">
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div style="margin: 24px 0;">
+                {% if user_diary %}
+                    <a href="{% url 'upload_diary' attraction.id %}" class="btn btn-warning">修改我的日记</a>
+                {% else %}
+                    <a href="{% url 'upload_diary' attraction.id %}" class="btn btn-primary">上传日记</a>
+                {% endif %}
+            </div>
+
+            <hr>
+            <h3>日记列表</h3>
+            {% if diaries %}
+                {% for diary in diaries %}
+                    <div class="diary-card" style="border:1px solid #eee;padding:10px;margin-bottom:10px;">
+                        <a href="{% url 'diary_detail' diary.id %}"><strong>{{ diary.title }}</strong></a>
+                        <span style="margin-left:10px;color:#888;">by {{ diary.author.username }}</span>
+                        <div>
+                            <span>评分：{{ diary.rating }}/5</span> |
+                            <span>热度：{{ diary.popularity }}</span> |
+                            <span>创建时间：{{ diary.created_at|date:"Y-m-d H:i" }}</span>
+                        </div>
+                        {% if diary.image %}
+                            <img src="{{ diary.image.url }}" alt="日记图片" style="max-width:180px;max-height:120px;margin-top:5px;">
+                        {% endif %}
+                        <div style="margin-top:5px;">
+                            <a href="{% url 'diary_detail' diary.id %}" class="btn btn-sm btn-outline-info">查看详情</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>暂无日记，快来上传第一篇吧！</p>
+            {% endif %}
+        </div>
+    </main>
+    <script src="{% static 'TourismSystem/attractions.js' %}"></script>
+</body>
+</html>
