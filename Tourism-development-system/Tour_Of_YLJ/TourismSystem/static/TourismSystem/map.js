@@ -8,6 +8,13 @@ let currentLocation;
 let currentFloor = 1;
 let buildingData;
 
+// 存储所有可搜索的场所数据
+let searchablePlaces = [];
+
+// 存储当前选中的类别和中心点
+let currentCategory = null;
+let centerPoint = null;
+
 console.log('map.js 文件已开始执行');
 
 // 初始化地图
@@ -128,10 +135,57 @@ function loadIndoorMapData() {
         });
 }
 
+// 坐标转换函数
+const PI = 3.14159265358979324;
+const a = 6378245.0;
+const ee = 0.00669342162296594323;
+
+function transformWGS84ToGCJ02(lng, lat) {
+    if (outOfChina(lng, lat)) {
+        return [lng, lat];
+    }
+    
+    let dLat = transformLat(lng - 105.0, lat - 35.0);
+    let dLng = transformLng(lng - 105.0, lat - 35.0);
+    
+    const radLat = lat / 180.0 * PI;
+    let magic = Math.sin(radLat);
+    magic = 1 - ee * magic * magic;
+    const sqrtMagic = Math.sqrt(magic);
+    
+    dLat = (dLat * 180.0) / ((a * (1 - ee)) / (magic * sqrtMagic) * PI);
+    dLng = (dLng * 180.0) / (a / sqrtMagic * Math.cos(radLat) * PI);
+    
+    return [lng + dLng, lat + dLat];
+}
+
+function transformLat(x, y) {
+    let ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
+    ret += (20.0 * Math.sin(6.0 * x * PI) + 20.0 * Math.sin(2.0 * x * PI)) * 2.0 / 3.0;
+    ret += (20.0 * Math.sin(y * PI) + 40.0 * Math.sin(y / 3.0 * PI)) * 2.0 / 3.0;
+    ret += (160.0 * Math.sin(y / 12.0 * PI) + 320 * Math.sin(y * PI / 30.0)) * 2.0 / 3.0;
+    return ret;
+}
+
+function transformLng(x, y) {
+    let ret = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x));
+    ret += (20.0 * Math.sin(6.0 * x * PI) + 20.0 * Math.sin(2.0 * x * PI)) * 2.0 / 3.0;
+    ret += (20.0 * Math.sin(x * PI) + 40.0 * Math.sin(x / 3.0 * PI)) * 2.0 / 3.0;
+    ret += (150.0 * Math.sin(x / 12.0 * PI) + 300.0 * Math.sin(x / 30.0 * PI)) * 2.0 / 3.0;
+    return ret;
+}
+
+function outOfChina(lng, lat) {
+    return (lng < 72.004 || lng > 137.8347 || lat < 0.8293 || lat > 55.8271);
+}
+
 // 添加建筑物标记
 function addBuildingMarker() {
+    // 转换坐标
+    const [gcjLng, gcjLat] = transformWGS84ToGCJ02(buildingData.location.lng, buildingData.location.lat);
+    
     const marker = new AMap.Marker({
-        position: [buildingData.location.longitude, buildingData.location.latitude],
+        position: [gcjLng, gcjLat],
         title: buildingData.name
     });
     map.add(marker);
@@ -162,9 +216,11 @@ function addFloorPOIs(floor) {
 
     // 添加POI点
     floorData.pois.forEach(poi => {
+        // 转换坐标
+        const [gcjLng, gcjLat] = transformWGS84ToGCJ02(poi.location.lng, poi.location.lat);
+        
         const marker = new AMap.Marker({
-            position: [buildingData.location.longitude + poi.location.x / 100000, 
-                      buildingData.location.latitude + poi.location.y / 100000],
+            position: [gcjLng, gcjLat],
             title: poi.name
         });
         map.add(marker);
@@ -190,7 +246,9 @@ function addMapControls() {
     try {
         // 添加比例尺控件
         console.log('尝试添加比例尺控件...');
-        map.addControl(new AMap.Scale());
+        map.addControl(new AMap.Scale({
+            position: 'LB'
+        }));
         console.log('比例尺控件添加成功');
     } catch (error) {
         console.error('比例尺控件添加失败:', error);
@@ -278,116 +336,255 @@ function switchFloor(floor) {
     }
 }
 
-// 搜索地点
+// 加载可搜索的场所数据
+async function loadSearchablePlaces() {
+    try {
+        // 加载建筑物数据
+        const buildingsResponse = await fetch('/static/TourismSystem/data/buildings.json');
+        const buildingsData = await buildingsResponse.json();
+        
+        // 加载设施数据
+        const facilitiesResponse = await fetch('/static/TourismSystem/data/facilities.json');
+        const facilitiesData = await facilitiesResponse.json();
+        
+        // 过滤掉类型为"路口"的设施
+        const filteredFacilities = facilitiesData.filter(facility => facility.type !== "路口");
+        
+        // 合并数据
+        searchablePlaces = [...buildingsData, ...filteredFacilities];
+        console.log('可搜索场所数据加载完成，共', searchablePlaces.length, '个场所');
+    } catch (error) {
+        console.error('加载场所数据失败:', error);
+    }
+}
+
+// 计算两点之间的距离（米）
+function calculateDistance(lat1, lng1, lat2, lng2) {
+    const R = 6371000; // 地球半径（米）
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+// 获取所有可用的类别
+function getAvailableCategories() {
+    const categories = new Set();
+    searchablePlaces.forEach(place => {
+        if (place.type && place.type !== '路口') {
+            categories.add(place.type);
+        }
+    });
+    return Array.from(categories);
+}
+
+// 显示附近设施窗口
+function showNearbyPlacesWindow(position) {
+    centerPoint = position;
+    currentCategory = null;
+    
+    // 显示窗口
+    const window = document.getElementById('nearbyPlacesWindow');
+    window.style.display = 'flex';
+    
+    // 生成类别标签
+    const categories = getAvailableCategories();
+    const categoryTags = document.getElementById('categoryTags');
+    categoryTags.innerHTML = categories.map(category => `
+        <div class="category-tag" onclick="filterByCategory('${category}')">${category}</div>
+    `).join('');
+    
+    // 显示附近场所
+    showNearbyPlaces();
+}
+
+// 关闭附近设施窗口
+function closeNearbyPlacesWindow() {
+    const window = document.getElementById('nearbyPlacesWindow');
+    window.style.display = 'none';
+    currentCategory = null;
+    centerPoint = null;
+}
+
+// 根据类别筛选场所
+function filterByCategory(category) {
+    currentCategory = category;
+    
+    // 更新标签样式
+    const tags = document.querySelectorAll('.category-tag');
+    tags.forEach(tag => {
+        tag.classList.toggle('active', tag.textContent === category);
+    });
+    
+    // 显示筛选后的场所
+    showNearbyPlaces();
+}
+
+// 显示附近场所
+function showNearbyPlaces() {
+    if (!centerPoint) return;
+    
+    const placesList = document.getElementById('placesList');
+    const [centerLng, centerLat] = centerPoint;
+    
+    // 筛选附近1000米内的场所
+    let nearbyPlaces = searchablePlaces.filter(place => {
+        const distance = calculateDistance(centerLat, centerLng, place.location.lat, place.location.lng);
+        return distance <= 1000;
+    });
+    
+    // 如果选择了类别，进一步筛选
+    if (currentCategory) {
+        nearbyPlaces = nearbyPlaces.filter(place => place.type === currentCategory);
+    }
+    
+    // 按距离排序
+    nearbyPlaces.sort((a, b) => {
+        const distA = calculateDistance(centerLat, centerLng, a.location.lat, a.location.lng);
+        const distB = calculateDistance(centerLat, centerLng, b.location.lat, b.location.lng);
+        return distA - distB;
+    });
+    
+    // 显示场所列表
+    if (nearbyPlaces.length === 0) {
+        placesList.innerHTML = '<div class="place-item">附近无该类型场所</div>';
+        return;
+    }
+    
+    placesList.innerHTML = nearbyPlaces.map(place => {
+        const distance = calculateDistance(centerLat, centerLng, place.location.lat, place.location.lng);
+        // 转换坐标
+        const [gcjLng, gcjLat] = transformWGS84ToGCJ02(place.location.lng, place.location.lat);
+        return `
+            <div class="place-item" onclick="locatePlace(${gcjLng}, ${gcjLat}, '${place.name}')">
+                <h4>${place.name}</h4>
+                <p>
+                    <span class="place-type">${place.type}</span>
+                    <span class="place-distance">${Math.round(distance)}米</span>
+                </p>
+                ${place.description ? `<p class="place-description">${place.description}</p>` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+// 定位到指定场所
+function locatePlace(lng, lat, name) {
+    const position = [lng, lat];
+    map.setCenter(position);
+    
+    // 添加标记
+    const marker = new AMap.Marker({
+        position: position,
+        title: name,
+        map: map
+    });
+    
+    // 显示信息窗体
+    const infoWindow = new AMap.InfoWindow({
+        content: `<div style="padding:10px;">
+            <h3>${name}</h3>
+        </div>`,
+        offset: new AMap.Pixel(0, -30)
+    });
+    
+    infoWindow.open(map, position);
+    
+    // 关闭附近设施窗口
+    closeNearbyPlacesWindow();
+}
+
+// 修改搜索场所函数，添加"查找附近设施"按钮
 function searchPlace() {
-    const keyword = document.getElementById('searchInput').value;
+    const keyword = document.getElementById('searchInput').value.trim();
     if (!keyword) {
         alert('请输入搜索关键词');
         return;
     }
 
-    // 首先在室内地图数据中搜索
-    // 检查室内地图数据是否已加载
-    if (!buildingData) {
-        console.warn('室内地图数据尚未加载，请稍候或尝试外部搜索。');
-        // 可以选择在这里 return 或者继续进行外部搜索
-        // 为了不阻止外部搜索，我们不 return
-    }
+    // 在场所数据中搜索
+    const results = searchablePlaces.filter(place => 
+        place.name.toLowerCase().includes(keyword.toLowerCase())
+    );
 
-    const indoorResults = searchIndoorPOIs(keyword);
-    if (indoorResults.length > 0) {
-        // 如果找到室内POI点，显示第一个结果
-        const poi = indoorResults[0];
-        const marker = new AMap.Marker({
-            position: [buildingData.location.longitude + poi.location.x / 100000,
-                      buildingData.location.latitude + poi.location.y / 100000],
-            title: poi.name
-        });
-        map.add(marker);
-        map.setCenter([buildingData.location.longitude + poi.location.x / 100000,
-                      buildingData.location.latitude + poi.location.y / 100000]);
-        const infoWindow = new AMap.InfoWindow({
-            content: `<div style="padding:10px;">
-                <h3>${poi.name}</h3>
-                <p>类型：${poi.type}</p>
-                <p>楼层：${currentFloor}层</p>
-            </div>`,
-            offset: new AMap.Pixel(0, -30)
-        });
-        infoWindow.open(map, marker.getPosition());
-
-        // 如果当前位置存在，规划路线
-        if (currentLocation) {
-            planRoute(currentLocation, [buildingData.location.longitude + poi.location.x / 100000,
-                                      buildingData.location.latitude + poi.location.y / 100000]);
-        }
+    // 显示搜索结果
+    const searchResults = document.getElementById('searchResults');
+    searchResults.innerHTML = '';
+    
+    if (results.length === 0) {
+        searchResults.innerHTML = '<div class="search-result-item">未找到相关场所</div>';
     } else {
-        // 如果在室内地图中没找到，使用高德地图搜索
-        placeSearch.search(keyword, function(status, result) {
-            if (status === 'complete') {
-                const pois = result.poiList.pois;
-                if (pois.length > 0) {
-                    const poi = pois[0];
-                    const marker = new AMap.Marker({
-                        position: [poi.location.lng, poi.location.lat],
-                        title: poi.name
-                    });
-                    map.add(marker);
-                    map.setCenter([poi.location.lng, poi.location.lat]);
-                    const infoWindow = new AMap.InfoWindow({
-                        content: '<div style="padding:10px;">' + poi.name + '</div>',
-                        offset: new AMap.Pixel(0, -30)
-                    });
-                    infoWindow.open(map, [poi.location.lng, poi.location.lat]);
-
-                    // 如果当前位置存在，规划路线
-                    if (currentLocation) {
-                        planRoute(currentLocation, [poi.location.lng, poi.location.lat]);
-                    }
-                } else {
-                    alert('未找到相关地点');
-                }
-            } else {
-                alert('搜索失败，请稍后重试');
-            }
-        });
-    }
-}
-
-// 搜索室内POI点
-function searchIndoorPOIs(keyword) {
-    const results = [];
-    for (const floor in buildingData.floors) {
-        const floorData = buildingData.floors[floor];
-        floorData.pois.forEach(poi => {
-            if (poi.name.includes(keyword) || poi.id.includes(keyword)) {
-                results.push(poi);
-            }
-        });
-    }
-    return results;
-}
-
-// 规划路线
-function planRoute(start, end) {
-    walking.search(start, end, function(status, result) {
-        if (status === 'complete') {
-            document.getElementById('routeInfo').style.display = 'block';
-            const route = result.routes[0];
-            const details = document.getElementById('routeDetails');
-            details.innerHTML = `
-                <p>总距离：${route.distance}米</p>
-                <p>预计时间：${Math.ceil(route.time / 60)}分钟</p>
-                <p>起点：${route.start}</p>
-                <p>终点：${route.end}</p>
+        results.forEach(place => {
+            const resultItem = document.createElement('div');
+            resultItem.className = 'search-result-item';
+            resultItem.innerHTML = `
+                <h4>${place.name}</h4>
+                <p>${place.type || ''}</p>
             `;
-        } else {
-            alert('路线规划失败，请稍后重试');
-        }
-    });
+            
+            // 点击搜索结果时定位到该场所
+            resultItem.addEventListener('click', function() {
+                // 转换坐标
+                const [gcjLng, gcjLat] = transformWGS84ToGCJ02(place.location.lng, place.location.lat);
+                const position = [gcjLng, gcjLat];
+                map.setCenter(position);
+                
+                // 添加标记
+                const marker = new AMap.Marker({
+                    position: position,
+                    title: place.name,
+                    map: map
+                });
+                
+                // 显示信息窗体
+                const infoWindow = new AMap.InfoWindow({
+                    content: `<div style="padding:10px;">
+                        <h3>${place.name}</h3>
+                        <p>${place.type || ''}</p>
+                        ${place.description ? `<p>${place.description}</p>` : ''}
+                        <button onclick="showNearbyPlacesWindow([${gcjLng}, ${gcjLat}])">查找附近设施</button>
+                    </div>`,
+                    offset: new AMap.Pixel(0, -30)
+                });
+                
+                infoWindow.open(map, position);
+                
+                // 隐藏搜索结果
+                searchResults.style.display = 'none';
+            });
+            
+            searchResults.appendChild(resultItem);
+        });
+    }
+    
+    // 显示搜索结果
+    searchResults.style.display = 'block';
 }
 
-// 页面加载完成后初始化地图
-// document.addEventListener('DOMContentLoaded', function() {
-//     initMap();
-// }); 
+// 确保在页面加载完成后初始化搜索功能
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化地图
+    initMap();
+    
+    // 加载可搜索的场所数据
+    loadSearchablePlaces();
+    
+    // 绑定搜索按钮点击事件
+    const searchButton = document.querySelector('.search-box button');
+    if (searchButton) {
+        searchButton.addEventListener('click', searchPlace);
+    }
+    
+    // 绑定搜索框回车事件
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchPlace();
+            }
+        });
+    }
+}); 

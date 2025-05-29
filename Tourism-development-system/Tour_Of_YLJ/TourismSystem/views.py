@@ -13,6 +13,7 @@ from django.contrib import messages
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 import os
+import json
 
 # 确保MEDIA_URL和MEDIA_ROOT在settings中正确配置
 # MEDIA_URL = '/media/'
@@ -20,9 +21,28 @@ import os
 
 # Create your views here.
 
+def load_places_data():
+    # 获取数据文件的路径
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    buildings_path = os.path.join(base_dir, 'data', 'buildings.json')
+    facilities_path = os.path.join(base_dir, 'data', 'facilities.json')
+    
+    # 读取数据
+    with open(buildings_path, 'r', encoding='utf-8') as f:
+        buildings = json.load(f)
+    with open(facilities_path, 'r', encoding='utf-8') as f:
+        facilities = json.load(f)
+    
+    # 过滤掉类型为"路口"的设施
+    filtered_facilities = [f for f in facilities if f['type'] != '路口']
+    
+    # 合并数据
+    return buildings + filtered_facilities
+
 def attractions(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect(reverse("login"))
+    
     # 支持按热度、评分、类别、关键字筛选和排序
     sort = request.GET.get("sort", "popularity")  # 默认按热度
     category = request.GET.get("category", "")
@@ -40,12 +60,13 @@ def attractions(request):
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
     categories = Attraction.CATEGORY_CHOICES
+    
     return render(request, "TourismSystem/attractions.html", {
         "page_obj": page_obj,
         "categories": categories,
         "current_category": category,
         "current_keyword": keyword,
-        "sort": sort,
+        "sort": sort
     })
 
 @login_required

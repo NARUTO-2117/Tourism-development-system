@@ -103,24 +103,30 @@
             box-shadow: 0 2px 6px rgba(0,0,0,0.1);
             width: 300px;
         }
-        .search-panel input {
-            width: 100%;
-            padding: 8px;
+        .search-panel .search-box {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .search-panel .search-box input {
+            flex: 1;
+            padding: 6px 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
-            margin-bottom: 8px;
+            font-size: 14px;
         }
-        .search-panel button {
-            width: 100%;
-            padding: 8px;
-            background: #1a73e8;
-            color: #fff;
+        .search-panel .search-box button {
+            padding: 6px 12px;
+            background: #1890ff;
+            color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap;
         }
-        .search-panel button:hover {
-            background: #1765c1;
+        .search-panel .search-box button:hover {
+            background: #40a9ff;
         }
         .route-info {
             position: absolute;
@@ -193,6 +199,15 @@
         <div class="right-panel">
             <div class="map-container">
                 <div id="map"></div>
+                <div class="search-panel">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="搜索场所...">
+                        <button onclick="searchPlace()">搜索</button>
+                    </div>
+                    <div id="searchResults" class="search-results">
+                        <!-- 搜索结果将在这里显示 -->
+                    </div>
+                </div>
                 <button class="location-btn" onclick="getLocation()">定位我的位置</button>
                 <div class="floor-switch">
                     <select id="floorSelect" onchange="switchFloor(this.value)">
@@ -203,13 +218,23 @@
                         <option value="5">五层</option>
                     </select>
                 </div>
-                <div class="search-panel">
-                    <input type="text" id="searchInput" placeholder="搜索目的地...">
-                    <button onclick="searchPlace()">搜索</button>
-                </div>
                 <div class="route-info" id="routeInfo" style="display: none;">
                     <h4>导航信息</h4>
                     <div id="routeDetails"></div>
+                </div>
+            </div>
+
+            <!-- 附近设施窗口 -->
+            <div id="nearbyPlacesWindow" class="nearby-places-window" style="display: none;">
+                <div class="nearby-places-header">
+                    <h3>附近设施</h3>
+                    <button class="close-btn" onclick="closeNearbyPlacesWindow()">×</button>
+                </div>
+                <div class="category-tags" id="categoryTags">
+                    <!-- 类别标签将在这里动态生成 -->
+                </div>
+                <div class="places-list" id="placesList">
+                    <!-- 场所列表将在这里动态生成 -->
                 </div>
             </div>
         </div>
@@ -284,103 +309,25 @@
                 return;
             }
             console.log('地图容器存在，尺寸:', mapContainer.offsetWidth, 'x', mapContainer.offsetHeight);
+            
             // 初始化地图
-            console.log('调用 initMap 函数前，initMap 的值:', initMap);
-            // initMap(); // 暂时注释掉 initMap 函数调用
-            console.log('initMap 函数已调用');
-
-            // 直接在 window.onload 中进行地图初始化
-            console.log('开始直接在 window.onload 中初始化地图...');
-
-            if (typeof AMap === 'undefined') {
-                console.error('window.onload: 高德地图API未加载');
-                return;
-            }
-            console.log('window.onload: 高德地图API已加载');
-
             try {
                 const mapOptions = {
                     zoom: 16,
                     center: [116.3586, 39.9606],
                     viewMode: '3D'
                 };
-                console.log('window.onload: 地图配置:', mapOptions);
+                console.log('地图配置:', mapOptions);
 
-                // 使用在 map.js 中声明的全局 map 变量
                 map = new AMap.Map('map', mapOptions);
-                console.log('window.onload: 地图实例创建尝试完成');
-
-                map.on('complete', function() {
-                    console.log('window.onload: 地图加载完成事件触发');
-                    
-                     try {
-                        // 初始化室内地图
-                        const indoorMapOptions = {
-                            zIndex: 100,
-                            opacity: 1
-                        };
-                        console.log('window.onload: 室内地图配置:', indoorMapOptions);
-
-                        // 使用在 map.js 中声明的全局 indoorMap 变量
-                        indoorMap = new AMap.IndoorMap(indoorMapOptions);
-                        map.add(indoorMap);
-                        console.log('window.onload: 室内地图插件初始化成功');
-
-                        // 初始化步行导航
-                        walking = new AMap.Walking({
-                            map: map,
-                            panel: "routeInfo"
-                        });
-                        console.log('window.onload: 步行导航插件初始化成功');
-
-                        // 初始化地点搜索
-                        placeSearch = new AMap.PlaceSearch({
-                            pageSize: 10,
-                            pageIndex: 1,
-                            city: "北京"
-                        });
-                        console.log('window.onload: 地点搜索插件初始化成功');
-
-                        // 初始化自动完成
-                        autoComplete = new AMap.AutoComplete({
-                            city: "北京"
-                        });
-                        console.log('window.onload: 自动完成插件初始化成功');
+                console.log('地图实例创建完成');
 
                         // 添加地图控件
-                        // 确保 addMapControls 函数在全局作用域或在此处可访问
-                        if (typeof addMapControls === 'function') {
                              addMapControls();
-                             console.log('window.onload: 地图控件添加成功');
-                        } else {
-                             console.error('window.onload: addMapControls 函数未定义');
-                        }
-
-                        // 加载室内地图数据
-                        // 确保 loadIndoorMapData 函数在全局作用域或在此处可访问
-                         if (typeof loadIndoorMapData === 'function') {
-                             loadIndoorMapData();
-                             console.log('window.onload: 开始加载室内地图数据');
-                         } else {
-                             console.error('window.onload: loadIndoorMapData 函数未定义');
-                         }
-
-                    } catch (error) {
-                        console.error('window.onload: 插件初始化失败:', error);
-                    }
-
-                });
-
-                 map.on('error', function(error) {
-                    console.error('window.onload: 地图加载错误:', error);
-                });
-
 
             } catch (error) {
-                console.error('window.onload: 地图初始化失败:', error);
+                console.error('地图初始化失败:', error);
             }
-
-
         };
     </script>
 </body>

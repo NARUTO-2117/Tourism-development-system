@@ -191,3 +191,197 @@ p {
 .image-gallery img:hover {
     transform: scale(1.05);
 } 
+
+.search-panel {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    width: 300px;
+}
+
+.search-panel .search-box {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.search-panel .search-box input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.search-panel .search-box button {
+    padding: 6px 12px;
+    background: #1890ff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.search-panel .search-box button:hover {
+    background: #40a9ff;
+}
+
+.search-results {
+    margin-top: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+}
+
+.search-result-item {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+}
+
+.search-result-item:hover {
+    background: #f5f5f5;
+}
+
+.search-result-item h4 {
+    margin: 0;
+    font-size: 14px;
+    color: #333;
+}
+
+.search-result-item p {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: #666;
+}
+
+/* 附近设施窗口样式 */
+.nearby-places-window {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 66.67%;
+    height: 66.67%;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.nearby-places-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.nearby-places-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #666;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.close-btn:hover {
+    color: #333;
+}
+
+.category-tags {
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.category-tag {
+    padding: 6px 12px;
+    background: #f5f5f5;
+    border-radius: 16px;
+    font-size: 14px;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.category-tag:hover {
+    background: #e0e0e0;
+}
+
+.category-tag.active {
+    background: #1a73e8;
+    color: white;
+}
+
+.places-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px 20px;
+}
+
+.place-item {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.place-item:hover {
+    background-color: #f5f5f5;
+}
+
+.place-item h4 {
+    margin: 0 0 5px 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.place-item p {
+    margin: 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.place-item .place-type {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #e3f0ff;
+    color: #1765c1;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-right: 8px;
+}
+
+.place-item .place-distance {
+    color: #888;
+    font-size: 12px;
+}
+
+.place-item .place-description {
+    margin-top: 5px;
+    color: #666;
+    font-size: 13px;
+} 
