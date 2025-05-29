@@ -13,7 +13,9 @@
             securityJsCode: '8f16d1c5b8052c3c765769b6d84e74a3',
         }
     </script>
-    <script type="text/javascript" src="https://webapi.amap.com/maps?v=2.0&key=fc62e82edc66521f15189e8d43e3d075&plugin=AMap.Geolocation,AMap.IndoorMap,AMap.Driving,AMap.Walking,AMap.PlaceSearch,AMap.AutoComplete"></script>
+    <script type="text/javascript" src="https://webapi.amap.com/maps?v=2.0&key=fc62e82edc66521f15189e8d43e3d075&plugin=AMap.Geolocation,AMap.IndoorMap,AMap.Driving,AMap.Walking,AMap.PlaceSearch,AMap.AutoComplete,AMap.Scale,AMap.ToolBar"></script>
+    <!-- 添加路线规划相关脚本 -->
+    <script type="text/javascript" src="{% static 'TourismSystem/route.js' %}"></script>
     <style>
         body {
             margin: 0;
@@ -180,18 +182,23 @@
 
     <main class="attractions-container">
         <div class="left-panel">
-            <div class="combined-panel">
-                <div class="list-container">
+            <div class="left-panel-content">
+                <div class="search-container">
+                    <input type="text" id="searchInput" placeholder="搜索场所...">
+                    <button onclick="searchPlaces()">搜索</button>
+                </div>
+                <div class="attractions-list-container">
                     <h3>景点列表</h3>
-                    <div id="attractionsList">
-                        <!-- 动态加载景点列表 -->
+                    <div id="attractionsList" class="attractions-list">
+                        <!-- 景点列表将通过JavaScript动态加载 -->
                     </div>
                 </div>
-                <div class="separator"></div>
-                <div class="selected-panel">
+            </div>
+            <div class="right-panel-content">
+                <div class="selected-attractions-container">
                     <h3>已选景点</h3>
-                    <div id="selectedAttractions">
-                        <!-- 用户选中的景点 -->
+                    <div id="selectedAttractions" class="selected-attractions">
+                        <!-- 已选景点将通过JavaScript动态加载 -->
                     </div>
                 </div>
             </div>
@@ -291,10 +298,18 @@
 
     <script src="{% static 'TourismSystem/auth.js' %}"></script>
     <script src="{% static 'TourismSystem/map.js' %}"></script>
+    <script>
+        // 定义静态文件URL
+        const STATIC_URL = {
+            facilities: "{% static 'TourismSystem/data/facilities.json' %}",
+            buildings: "{% static 'TourismSystem/data/buildings.json' %}"
+        };
+    </script>
+    <script src="{% static 'TourismSystem/route.js' %}"></script>
     <script src="{% static 'TourismSystem/attractions.js' %}"></script>
     <script>
         // 只保留 window.onload 作为唯一初始化入口
-        window.onload = function() {
+        window.onload = async function() {
             console.log('页面加载完成，开始初始化地图...');
             // 检查高德地图API是否加载
             if (typeof AMap === 'undefined') {
@@ -319,12 +334,23 @@
                 };
                 console.log('地图配置:', mapOptions);
 
-                map = new AMap.Map('map', mapOptions);
+                window.map = new AMap.Map('map', mapOptions);
                 console.log('地图实例创建完成');
 
-                        // 添加地图控件
-                             addMapControls();
+                // 添加地图控件
+                if (typeof window.addMapControls === 'function') {
+                    window.addMapControls();
+                } else {
+                    console.warn('addMapControls函数未定义');
+                }
 
+                // 初始化路线规划
+                if (window.routePlanning && typeof window.routePlanning.init === 'function') {
+                    await window.routePlanning.init();
+                    console.log('路线规划初始化完成');
+                } else {
+                    console.warn('routePlanning未定义或init方法不存在');
+                }
             } catch (error) {
                 console.error('地图初始化失败:', error);
             }
