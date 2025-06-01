@@ -3,6 +3,9 @@ document.addEventListener('DOMContentLoaded', function() {
     setupLogForm();
     // loadLogs(); // 注释掉
     setupImagePreview();
+    setupLikeButtons();
+    setupShareButtons();
+    setupSearchForm();
 });
 
 // 标签页切换功能
@@ -355,4 +358,238 @@ function formatDate(dateString) {
 function showSuccess(message) {
     // 实现成功提示
     alert(message); // 可以替换为更好的UI提示
+}
+
+// 点赞功能
+function setupLikeButtons() {
+    const likeButtons = document.querySelectorAll('.like-btn');
+    
+    likeButtons.forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const diaryId = this.dataset.diaryId;
+            const icon = this.querySelector('i');
+            
+            try {
+                const response = await fetch(`/api/diaries/${diaryId}/like/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const popularityElement = this.closest('.diary-card').querySelector('.stat-item[title="热度"]');
+                    
+                    if (data.liked) {
+                        icon.classList.remove('far');
+                        icon.classList.add('fas');
+                        this.classList.add('active');
+                    } else {
+                        icon.classList.remove('fas');
+                        icon.classList.add('far');
+                        this.classList.remove('active');
+                    }
+                    
+                    if (popularityElement) {
+                        popularityElement.textContent = data.popularity;
+                    }
+                }
+            } catch (error) {
+                console.error('Error liking diary:', error);
+            }
+        });
+    });
+}
+
+// 分享功能
+function setupShareButtons() {
+    const shareButtons = document.querySelectorAll('.share-btn');
+    
+    shareButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const diaryCard = this.closest('.diary-card');
+            const title = diaryCard.querySelector('.diary-title').textContent;
+            const url = window.location.origin + diaryCard.querySelector('.diary-title').href;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: title,
+                    url: url
+                }).catch(console.error);
+            } else {
+                // 复制链接到剪贴板
+                navigator.clipboard.writeText(url).then(() => {
+                    alert('链接已复制到剪贴板！');
+                }).catch(console.error);
+            }
+        });
+    });
+}
+
+// 搜索表单处理
+function setupSearchForm() {
+    const searchForm = document.querySelector('.search-form');
+    const searchInput = searchForm.querySelector('input[name="keyword"]');
+    const destinationInput = searchForm.querySelector('input[name="destination"]');
+    const sortSelect = searchForm.querySelector('select[name="sort"]');
+    
+    let searchTimeout;
+    
+    // 保存搜索状态到 URL
+    function updateSearchParams() {
+        const params = new URLSearchParams(window.location.search);
+        
+        if (searchInput.value) {
+            params.set('keyword', searchInput.value);
+        } else {
+            params.delete('keyword');
+        }
+        
+        if (destinationInput.value) {
+            params.set('destination', destinationInput.value);
+        } else {
+            params.delete('destination');
+        }
+        
+        if (sortSelect.value) {
+            params.set('sort', sortSelect.value);
+        } else {
+            params.delete('sort');
+        }
+        
+        window.history.replaceState({}, '', `${window.location.pathname}?${params}`);
+        
+        // 触发搜索
+        performSearch();
+    }
+    
+    // 执行搜索
+    async function performSearch() {
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const response = await fetch(`/api/diaries/search/?${params.toString()}`);
+            
+            if (!response.ok) {
+                throw new Error('搜索失败');
+            }
+            
+            const data = await response.json();
+            renderSearchResults(data);
+        } catch (error) {
+            console.error('搜索出错:', error);
+            showError('搜索失败，请稍后重试');
+        }
+    }
+    
+    // 渲染搜索结果
+    function renderSearchResults(data) {
+        const diaryGrid = document.querySelector('.diary-grid');
+        if (!diaryGrid) return;
+        
+        if (data.diaries.length === 0) {
+            diaryGrid.innerHTML = `
+                <div class="no-results">
+                    <i class="fas fa-search"></i>
+                    <p>未找到相关日记</p>
+                </div>
+            `;
+            return;
+        }
+        
+        diaryGrid.innerHTML = data.diaries.map(diary => `
+            <div class="diary-card">
+                ${diary.image ? `
+                    <div class="diary-image-container">
+                        <img src="${diary.image.url}" alt="日记图片" class="diary-image">
+                        <div class="diary-image-overlay">
+                            <a href="/diary/${diary.id}" class="view-more-btn">
+                                <i class="fas fa-eye"></i> 查看详情
+                            </a>
+                        </div>
+                    </div>
+                ` : ''}
+                <div class="diary-content">
+                    <a href="/diary/${diary.id}" class="diary-title">${diary.title}</a>
+                    <div class="diary-meta">
+                        <span class="meta-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            ${diary.attraction.name}
+                        </span>
+                        <span class="meta-item">
+                            <i class="fas fa-user"></i>
+                            ${diary.author.username}
+                        </span>
+                    </div>
+                    <div class="diary-excerpt">
+                        ${diary.content.substring(0, 100)}...
+                    </div>
+                    <div class="diary-footer">
+                        <div class="diary-stats">
+                            <span class="stat-item" title="热度">
+                                <i class="fas fa-fire"></i>
+                                ${diary.popularity}
+                            </span>
+                            <span class="stat-item" title="评分">
+                                <i class="fas fa-star"></i>
+                                ${diary.rating}/5
+                            </span>
+                            <span class="stat-item" title="发布时间">
+                                <i class="fas fa-clock"></i>
+                                ${new Date(diary.created_at).toLocaleDateString()}
+                            </span>
+                        </div>
+                        <div class="diary-actions">
+                            <button class="action-btn like-btn" data-diary-id="${diary.id}" title="点赞">
+                                <i class="far fa-heart"></i>
+                            </button>
+                            <button class="action-btn share-btn" title="分享">
+                                <i class="fas fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        
+        // 重新绑定点赞和分享按钮事件
+        setupLikeButtons();
+        setupShareButtons();
+    }
+    
+    // 添加防抖处理
+    function debounce(func, wait) {
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(searchTimeout);
+                func(...args);
+            };
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(later, wait);
+        };
+    }
+    
+    // 使用防抖处理搜索输入
+    const debouncedSearch = debounce(updateSearchParams, 300);
+    
+    searchInput.addEventListener('input', debouncedSearch);
+    destinationInput.addEventListener('input', debouncedSearch);
+    sortSelect.addEventListener('change', updateSearchParams);
+}
+
+// 获取 CSRF Token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
 }

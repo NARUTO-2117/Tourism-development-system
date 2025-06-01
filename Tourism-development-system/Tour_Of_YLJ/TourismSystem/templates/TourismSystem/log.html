@@ -6,12 +6,251 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>旅行日志 - 旅游系统</title>
     <link rel="stylesheet" href="{% static 'TourismSystem/style.css' %}">
-    <link rel="stylesheet" href="{% static 'TourismSystem/log.css' %}">
-    <link rel="stylesheet" href="{% static 'TourismSystem/https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #e3f0ff 0%, #fafcff 100%);
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        .top_nav {
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(60,64,67,0.08);
+            padding: 0 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            padding: 0 24px;
+        }
+        .nav-left a {
+            color: #1a73e8;
+            text-decoration: none;
+            font-size: 1.1rem;
+            margin-right: 32px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-left a.logo {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1765c1;
+            margin-right: 40px;
+        }
+        .nav-left a:hover {
+            color: #1765c1;
+        }
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: #f1f3f4;
+            border-radius: 24px;
+            padding: 8px 16px;
+            width: 400px;
+            transition: all 0.3s;
+        }
+        .search-box:focus-within {
+            background: #fff;
+            box-shadow: 0 1px 6px rgba(32,33,36,0.28);
+        }
+        .search-box input {
+            border: none;
+            background: none;
+            outline: none;
+            width: 100%;
+            font-size: 1rem;
+            color: #202124;
+        }
+        .search-box button {
+            border: none;
+            background: none;
+            color: #5f6368;
+            cursor: pointer;
+            padding: 0 8px;
+        }
+        .search-box button:hover {
+            color: #1a73e8;
+        }
+        .user-profile a {
+            color: #1a73e8;
+            text-decoration: none;
+            font-size: 1rem;
+            margin-left: 16px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .user-profile a:hover {
+            color: #1765c1;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 24px;
+        }
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            background: #fff;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(60,64,67,0.12);
+        }
+        .filter-bar select {
+            padding: 8px 16px;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: #202124;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-bar select:hover {
+            border-color: #1a73e8;
+        }
+        .diary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+            margin-top: 24px;
+        }
+        .diary-card {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(60,64,67,0.12);
+            transition: all 0.3s;
+        }
+        .diary-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(60,64,67,0.16);
+        }
+        .diary-image-container {
+            position: relative;
+            height: 200px;
+            overflow: hidden;
+        }
+        .diary-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+        .diary-card:hover .diary-image {
+            transform: scale(1.05);
+        }
+        .diary-image-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .diary-card:hover .diary-image-overlay {
+            opacity: 1;
+        }
+        .view-more-btn {
+            color: #fff;
+            text-decoration: none;
+            padding: 8px 16px;
+            border: 2px solid #fff;
+            border-radius: 20px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .view-more-btn:hover {
+            background: #fff;
+            color: #1a73e8;
+        }
+        .diary-content {
+            padding: 20px;
+        }
+        .diary-title {
+            color: #202124;
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 12px;
+            display: block;
+        }
+        .diary-title:hover {
+            color: #1a73e8;
+        }
+        .diary-meta {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 12px;
+            color: #5f6368;
+            font-size: 0.9rem;
+        }
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .meta-item i {
+            color: #1a73e8;
+        }
+        .diary-excerpt {
+            color: #5f6368;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-top: 12px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 40px;
+        }
+        .pagination a {
+            color: #1a73e8;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .pagination a:hover {
+            background: #e8f0fe;
+        }
+        .pagination .current {
+            background: #1a73e8;
+            color: #fff;
+        }
+        @media (max-width: 768px) {
+            .nav-container {
+                padding: 0 16px;
+            }
+            .search-box {
+                width: 200px;
+            }
+            .main-container {
+                padding: 0 16px;
+            }
+            .diary-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-    <!-- 复用相同的导航栏 -->
-    <!-- 复用相同的导航栏 -->
     <nav class="top_nav">
         <div class="nav-container">
             <div class="nav-left">
@@ -21,126 +260,88 @@
                 <a href="{% url 'mine' %}">我的</a>
             </div>
             <div class="nav-center">
-                <div class="search-box">
-                    <input type="text" placeholder="搜索目的地...">
-                    <button type="submit"><i class="search-icon"></i></button>
-                </div>
+                <form class="search-box" method="get" action="{% url 'log' %}">
+                    <input type="text" name="keyword" placeholder="搜索目的地..." value="{{ keyword }}">
+                    <button type="submit"><i class="fas fa-search"></i></button>
+                </form>
             </div>
             <div class="nav-right">
-                <div class="user-profile" id="userProfile">
-                    <!-- <div class="user-avatar" id="userAvatar">
-                        <img src="images/default-avatar.png" alt="用户头像">
-                    </div> -->
-                    <div class="user-dropdown" id="userDropdown">
-                        <!-- 登录 -->
-                        <!-- <a href="{% url 'login' %}" id="loginLink">登录</a> -->
-                        <!-- 个人中心，默认隐藏 -->
-                        <!-- <a href="{% url 'mine' %}" id="profileLink" style="display: none;">个人中心</a> -->
-                        <!-- 退出登录，默认隐藏 -->
-                        <!-- <a href="{% url 'logout' %}" id="logoutBtn" style="display: none;">退出登录</a> -->
-                        <a href="{% url 'logout' %}" id="logoutBtn" >退出登录</a>
-                    </div>
+                <div class="user-profile">
+                    <a href="{% url 'logout' %}" id="logoutBtn">退出登录</a>
                 </div>
             </div>
         </div>
     </nav>
 
-    {% block content %}
-    <div class="log-container" style="max-width:900px;margin:40px auto;">
-        <h2 style="color:#1765c1;">全部日记</h2>
-        <form method="get" style="display:flex;gap:12px;align-items:center;margin-bottom:18px;">
-            <input type="text" name="keyword" placeholder="搜索标题/内容/景点" value="{{ keyword }}">
-            <select name="sort">
-                <option value="popularity" {% if sort == "popularity" %}selected{% endif %}>按热度</option>
-                <option value="rating" {% if sort == "rating" %}selected{% endif %}>按评分</option>
-                <option value="time" {% if sort == "time" %}selected{% endif %}>按时间</option>
+    <main class="main-container">
+        <div class="filter-bar">
+            <select name="sort" onchange="this.form.submit()" form="sort-form">
+                <option value="popularity" {% if sort == 'popularity' %}selected{% endif %}>按热度排序</option>
+                <option value="rating" {% if sort == 'rating' %}selected{% endif %}>按评分排序</option>
+                <option value="time" {% if sort == 'time' %}selected{% endif %}>按时间排序</option>
             </select>
-            <button type="submit" class="btn btn-primary">筛选</button>
-        </form>
+            <form id="sort-form" method="get" action="{% url 'log' %}">
+                <input type="hidden" name="keyword" value="{{ keyword }}">
+            </form>
+        </div>
+
         {% if page_obj %}
-            <table style="width:100%;margin-top:12px;border-collapse:collapse;">
-                <thead>
-                    <tr style="background:#f8fafc;">
-                        <th style="padding:8px;">标题</th>
-                        <th style="padding:8px;">景点</th>
-                        <th style="padding:8px;">作者</th>
-                        <th style="padding:8px;">评分</th>
-                        <th style="padding:8px;">热度</th>
-                        <th style="padding:8px;">创建时间</th>
-                        <th style="padding:8px;">操作</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for diary in page_obj %}
-                    <tr style="border-bottom:1px solid #eee;">
-                        <td style="padding:8px;">
-                            <a href="{% url 'diary_detail' diary.id %}">{{ diary.title }}</a>
-                        </td>
-                        <td style="padding:8px;">
-                            <a href="{% url 'attraction_detail' diary.attraction.id %}">{{ diary.attraction.name }}</a>
-                        </td>
-                        <td style="padding:8px;">{{ diary.author.username }}</td>
-                        <td style="padding:8px;">{{ diary.rating }}/5</td>
-                        <td style="padding:8px;">{{ diary.popularity }}</td>
-                        <td style="padding:8px;">{{ diary.created_at|date:"Y-m-d H:i" }}</td>
-                        <td style="padding:8px;">
-                            <a href="{% url 'diary_detail' diary.id %}" class="btn btn-sm btn-outline-info">详情</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            <div style="margin-top:24px;">
-                <span>共{{ page_obj.paginator.count }}条日记</span>
-                <div class="pagination">
-                    {% if page_obj.has_previous %}
-                        <a href="?sort={{ sort }}&keyword={{ keyword }}&page={{ page_obj.previous_page_number }}">上一页</a>
-                    {% endif %}
-                    <span>第{{ page_obj.number }}/{{ page_obj.paginator.num_pages }}页</span>
-                    {% if page_obj.has_next %}
-                        <a href="?sort={{ sort }}&keyword={{ keyword }}&page={{ page_obj.next_page_number }}">下一页</a>
-                    {% endif %}
-                </div>
+            <div class="diary-grid">
+                {% for diary in page_obj %}
+                    <div class="diary-card">
+                        {% if diary.image %}
+                            <div class="diary-image-container">
+                                <img src="{{ diary.image.url }}" alt="日记图片" class="diary-image">
+                                <div class="diary-image-overlay">
+                                    <a href="{% url 'diary_detail' diary.id %}" class="view-more-btn">
+                                        <i class="fas fa-eye"></i> 查看详情
+                                    </a>
+                                </div>
+                            </div>
+                        {% endif %}
+                        <div class="diary-content">
+                            <a href="{% url 'diary_detail' diary.id %}" class="diary-title">{{ diary.title }}</a>
+                            <div class="diary-meta">
+                                <span class="meta-item">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    {{ diary.attraction.name }}
+                                </span>
+                                <span class="meta-item">
+                                    <i class="fas fa-user"></i>
+                                    {{ diary.author.username }}
+                                </span>
+                            </div>
+                            <div class="diary-excerpt">
+                                {{ diary.content|truncatechars:100 }}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="pagination">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1{% if keyword %}&keyword={{ keyword }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">&laquo; 首页</a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% if keyword %}&keyword={{ keyword }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">上一页</a>
+                {% endif %}
+
+                <span class="current">
+                    第 {{ page_obj.number }} 页，共 {{ page_obj.paginator.num_pages }} 页
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if keyword %}&keyword={{ keyword }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">下一页</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}{% if keyword %}&keyword={{ keyword }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">末页 &raquo;</a>
+                {% endif %}
             </div>
         {% else %}
-            <p>暂无日记。</p>
+            <div style="text-align: center; padding: 40px; background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(60,64,67,0.12);">
+                <i class="fas fa-search" style="font-size: 48px; color: #dadce0; margin-bottom: 16px;"></i>
+                <h2 style="color: #5f6368; margin: 0;">没有找到相关日记</h2>
+                <p style="color: #80868b; margin-top: 8px;">尝试使用其他关键词搜索</p>
+            </div>
         {% endif %}
-    </div>
-    {% endblock %}
-
-    <!-- 日志模板 -->
-    <template id="logTemplate">
-        <div class="log-item">
-            <div class="log-header">
-                <img src="" alt="" class="author-avatar">
-                <div class="log-info">
-                    <h3 class="log-title"></h3>
-                    <div class="author-info">
-                        <span class="author-name"></span>
-                        <span class="log-date"></span>
-                    </div>
-                </div>
-            </div>
-            <div class="log-content"></div>
-            <div class="log-images"></div>
-            <div class="log-actions">
-                <div class="rating">
-                    <div class="stars">
-                        <i class="fas fa-star" data-rating="1"></i>
-                        <i class="fas fa-star" data-rating="2"></i>
-                        <i class="fas fa-star" data-rating="3"></i>
-                        <i class="fas fa-star" data-rating="4"></i>
-                        <i class="fas fa-star" data-rating="5"></i>
-                    </div>
-                    <span class="rating-count"></span>
-                </div>
-                <button class="like-btn">
-                    <i class="far fa-heart"></i>
-                    <span class="like-count">0</span>
-                </button>
-            </div>
-        </div>
-    </template>
+    </main>
 
     <script src="{% static 'TourismSystem/auth.js' %}"></script>
     <script src="{% static 'TourismSystem/log.js' %}"></script>

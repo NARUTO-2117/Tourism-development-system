@@ -27,10 +27,10 @@
         <p>{{ diary.content|linebreaksbr }}</p>
     </div>
     <div class="diary-actions">
-        <form method="post" action="{% url 'diary_like' diary.id %}">
+        <form method="post" action="/TourismSystem/diary/{{ diary.id }}/like/" class="like-form">
             {% csrf_token %}
-            <button type="submit" class="btn btn-outline-primary">
-                👍 点赞 ({{ diary.likes.count }})
+            <button type="submit" class="btn btn-outline-primary like-btn {% if request.user in diary.likes.all %}liked{% endif %}">
+                <i class="fas fa-heart"></i> 点赞 <span class="like-count">({{ diary.likes.count }})</span>
             </button>
         </form>
     </div>
@@ -45,11 +45,71 @@
         {% empty %}
             <p>暂无评论，快来抢沙发！</p>
         {% endfor %}
-        <form method="post" action="{% url 'diary_comment' diary.id %}">
+        <form method="post" action="/TourismSystem/diary/{{ diary.id }}/comment/">
             {% csrf_token %}
             <textarea name="content" rows="2" placeholder="写下你的评论..." required style="width:100%;margin-top:10px;"></textarea>
             <button type="submit" class="btn btn-success" style="margin-top:5px;">发表评论</button>
         </form>
     </div>
 </div>
+
+<style>
+.like-btn {
+    transition: all 0.3s ease;
+    border: 1px solid #1765c1;
+    color: #1765c1;
+    background: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.like-btn:hover {
+    background: #e3f0ff;
+}
+
+.like-btn.liked {
+    background: #1765c1;
+    color: white;
+}
+
+.like-btn i {
+    margin-right: 4px;
+}
+
+.like-count {
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const likeForm = document.querySelector('.like-form');
+    const likeBtn = likeForm.querySelector('.like-btn');
+    const likeCount = likeForm.querySelector('.like-count');
+    
+    likeForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        fetch(this.action, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.liked) {
+                likeBtn.classList.add('liked');
+            } else {
+                likeBtn.classList.remove('liked');
+            }
+            likeCount.textContent = `(${data.likes_count})`;
+        })
+        .catch(error => console.error('Error:', error));
+    });
+});
+</script>
 {% endblock %}

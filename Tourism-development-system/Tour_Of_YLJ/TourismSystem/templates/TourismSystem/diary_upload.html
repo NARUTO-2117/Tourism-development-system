@@ -1,57 +1,269 @@
-{% extends "TourismSystem/base.html" %}
-{% block content %}
-<style>
-.rating-stars {
-    display: flex;
-    flex-direction: row-reverse;
-    justify-content: flex-start;
-    font-size: 2rem;
-    margin-bottom: 10px;
-}
-.rating-stars input[type="radio"] {
-    display: none;
-}
-.rating-stars label {
-    color: #ccc;
-    cursor: pointer;
-    transition: color 0.2s;
-}
-.rating-stars input[type="radio"]:checked ~ label,
-.rating-stars label:hover,
-.rating-stars label:hover ~ label {
-    color: #FFD700;
-}
-</style>
-<div class="diary-upload-container">
-    <h2>上传日记 - {{ attraction.name }}</h2>
-    {% if error %}
-        <div class="error">{{ error }}</div>
-    {% endif %}
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.title.label_tag }} {{ form.title }}
-        <br>
-        {{ form.content.label_tag }} {{ form.content }}
-        <br>
-        {{ form.image.label_tag }} {{ form.image }}
-        <br>
-        <label>评分：</label>
-        <div class="rating-stars">
-            {% for i in "54321" %}
-                <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}" {% if form.rating.value|stringformat:"s" == i %}checked{% endif %}>
-                <label for="star{{ i }}">&#9733;</label>
-            {% endfor %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>发布日记 - 旅游系统</title>
+    <link rel="stylesheet" href="{% static 'TourismSystem/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #e3f0ff 0%, #fafcff 100%);
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        .upload-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        .upload-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(60,64,67,0.08);
+            padding: 32px;
+        }
+        .upload-header {
+            margin-bottom: 32px;
+        }
+        .upload-header h2 {
+            color: #1765c1;
+            margin: 0 0 12px 0;
+            font-size: 1.8rem;
+        }
+        .upload-header p {
+            color: #666;
+            margin: 0;
+            font-size: 1rem;
+        }
+        .form-group {
+            margin-bottom: 24px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        .form-control:focus {
+            border-color: #1765c1;
+            outline: none;
+        }
+        textarea.form-control {
+            min-height: 200px;
+            resize: vertical;
+        }
+        .rating-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .rating-input {
+            display: none;
+        }
+        .rating-label {
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: #ddd;
+            transition: color 0.2s;
+        }
+        .rating-input:checked ~ .rating-label,
+        .rating-label:hover,
+        .rating-label:hover ~ .rating-label {
+            color: #ffd700;
+        }
+        .image-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .preview-item {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .preview-item .remove-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.5);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+        .upload-btn {
+            background: #1765c1;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+        }
+        .upload-btn:hover {
+            background: #1557b0;
+        }
+        .upload-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .attraction-search {
+            position: relative;
+        }
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+        .search-result-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .search-result-item:hover {
+            background: #f5f5f5;
+        }
+        .selected-attraction {
+            margin-top: 8px;
+            padding: 8px;
+            background: #e3f0ff;
+            border-radius: 4px;
+            display: none;
+        }
+        .selected-attraction span {
+            color: #1765c1;
+            font-weight: 500;
+        }
+        .selected-attraction button {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="top_nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <a href="{% url 'index' %}">首页</a>
+                <a href="{% url 'attractions' %}" class="logo">旅游系统</a>
+                <a href="{% url 'log' %}">日志</a>
+                <a href="{% url 'mine' %}">我的</a>
+            </div>
+            <div class="nav-right">
+                <div class="user-profile">
+                    <a href="{% url 'logout' %}" id="logoutBtn">退出登录</a>
+                </div>
+            </div>
         </div>
-        <button type="submit" class="btn btn-primary">提交</button>
-        <a href="{% url 'attraction_detail' attraction.id %}" class="btn btn-secondary">取消</a>
-    </form>
-    {% if diary %}
-        <p>您已上传过该景点的日记。</p>
-        {% if diary.can_modify_rating %}
-            <p>您还可以修改一次评分。</p>
-        {% else %}
-            <p>评分已不可修改。</p>
-        {% endif %}
-    {% endif %}
-</div>
-{% endblock %}
+    </nav>
+
+    <div class="upload-container">
+        <div class="upload-card">
+            <div class="upload-header">
+                <h2>发布旅行日记</h2>
+                <p>分享你的旅行故事，记录美好瞬间</p>
+            </div>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="title">标题</label>
+                    <input type="text" id="title" name="title" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="content">内容</label>
+                    <textarea id="content" name="content" class="form-control" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>评分</label>
+                    <div class="rating-group">
+                        {% for i in "54321" %}
+                            <input type="radio" name="rating" value="{{ i }}" id="rating{{ i }}" class="rating-input" required>
+                            <label for="rating{{ i }}" class="rating-label">★</label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="image">上传图片</label>
+                    <input type="file" id="image" name="image" class="form-control" accept="image/*" multiple>
+                    <div class="image-preview" id="imagePreview"></div>
+                </div>
+                <button type="submit" class="upload-btn">发布日记</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="{% static 'TourismSystem/auth.js' %}"></script>
+    <script>
+        // 图片预览功能
+        document.getElementById('image').addEventListener('change', function(e) {
+            const preview = document.getElementById('imagePreview');
+            preview.innerHTML = '';
+            
+            [...e.target.files].forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'preview-item';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" alt="预览图">
+                        <button type="button" class="remove-btn" onclick="this.parentElement.remove()">×</button>
+                    `;
+                    preview.appendChild(div);
+                }
+                reader.readAsDataURL(file);
+            });
+        });
+
+        // 表单验证
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const title = document.getElementById('title').value.trim();
+            const content = document.getElementById('content').value.trim();
+            const rating = document.querySelector('input[name="rating"]:checked');
+            
+            if (!title || !content || !rating) {
+                e.preventDefault();
+                alert('请填写所有必填字段！');
+            }
+        });
+    </script>
+</body>
+</html>

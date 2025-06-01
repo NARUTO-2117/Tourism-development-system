@@ -18,13 +18,17 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from TourismSystem import views
+from django.views.generic import RedirectView
 
 urlpatterns = [
-    path('',include("users.urls")),
     path('admin/', admin.site.urls),
-    # path('users/',include("users.urls")),
-    path('TourismSystem/', include("TourismSystem.urls")),
-]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    # 根路径重定向到登录页面
+    path('', RedirectView.as_view(url='/login/', permanent=False)),
+    # 无前缀的登录相关页面
+    path('login/', views.login_view, name='login'),
+    path('register/', views.register, name='register'),
+    path('logout/', views.logout_view, name='logout'),
+    # 所有TourismSystem相关的URL
+    path('TourismSystem/', include('TourismSystem.urls')),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

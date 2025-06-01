@@ -171,7 +171,7 @@
         <div class="attraction-content">
             <div class="attraction-description">
                 <h2>景点介绍</h2>
-                <p>{{ attraction.epithet|default:"暂无简介" }}</p>
+                <p>{{ attraction.description|default:"暂无简介" }}</p>
             </div>
 
             <div class="attraction-images">
@@ -190,9 +190,9 @@
 
             <div style="margin: 24px 0;">
                 {% if user_diary %}
-                    <a href="{% url 'upload_diary' attraction.id %}" class="btn btn-warning">修改我的日记</a>
+                    <a href="{% url 'upload_diary' spot_id=attraction.id %}" class="btn btn-warning">修改我的日记</a>
                 {% else %}
-                    <a href="{% url 'upload_diary' attraction.id %}" class="btn btn-primary">上传日记</a>
+                    <a href="{% url 'upload_diary' spot_id=attraction.id %}" class="btn btn-primary">上传日记</a>
                 {% endif %}
             </div>
 
