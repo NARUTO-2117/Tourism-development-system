@@ -45,85 +45,85 @@ function initMap() {
     console.log('高德地图API已加载');
 
     return new Promise((resolve, reject) => {
-        try {
-            // 初始化地图
-            const mapOptions = {
-                zoom: 16,
-                center: [116.3586, 39.9606],
+    try {
+        // 初始化地图
+        const mapOptions = {
+            zoom: 16,
+            center: [116.3586, 39.9606],
                 viewMode: '3D',
                 resizeEnable: true
-            };
-            console.log('地图配置:', mapOptions);
+        };
+        console.log('地图配置:', mapOptions);
+        
+        map = new AMap.Map('map', mapOptions);
+        console.log('地图实例创建尝试完成');
+
+        // 等待地图加载完成
+        map.on('complete', function() {
+            console.log('地图加载完成事件触发，开始初始化插件...');
             
-            map = new AMap.Map('map', mapOptions);
-            console.log('地图实例创建尝试完成');
+            // 使用 AMap.plugin 加载需要的控件和插件
+            AMap.plugin(['AMap.Scale', 'AMap.ToolBar', 'AMap.Geolocation', 'AMap.IndoorMap', 'AMap.Walking', 'AMap.PlaceSearch', 'AMap.AutoComplete'], function() {
+                console.log('高德地图插件和控件加载完成');
 
-            // 等待地图加载完成
-            map.on('complete', function() {
-                console.log('地图加载完成事件触发，开始初始化插件...');
-                
-                // 使用 AMap.plugin 加载需要的控件和插件
-                AMap.plugin(['AMap.Scale', 'AMap.ToolBar', 'AMap.Geolocation', 'AMap.IndoorMap', 'AMap.Walking', 'AMap.PlaceSearch', 'AMap.AutoComplete'], function() {
-                    console.log('高德地图插件和控件加载完成');
+                try {
+                    // 初始化室内地图
+                    const indoorMapOptions = {
+                        zIndex: 100,
+                        opacity: 1
+                    };
+                    console.log('室内地图配置:', indoorMapOptions);
+                    
+                    indoorMap = new AMap.IndoorMap(indoorMapOptions);
+                    map.add(indoorMap);
+                    console.log('室内地图插件初始化成功');
 
-                    try {
-                        // 初始化室内地图
-                        const indoorMapOptions = {
-                            zIndex: 100,
-                            opacity: 1
-                        };
-                        console.log('室内地图配置:', indoorMapOptions);
-                        
-                        indoorMap = new AMap.IndoorMap(indoorMapOptions);
-                        map.add(indoorMap);
-                        console.log('室内地图插件初始化成功');
+                    // 初始化步行导航
+                    walking = new AMap.Walking({
+                        map: map,
+                        panel: "routeInfo"
+                    });
+                    console.log('步行导航插件初始化成功');
 
-                        // 初始化步行导航
-                        walking = new AMap.Walking({
-                            map: map,
-                            panel: "routeInfo"
-                        });
-                        console.log('步行导航插件初始化成功');
+                    // 初始化地点搜索
+                    placeSearch = new AMap.PlaceSearch({
+                        pageSize: 10,
+                        pageIndex: 1,
+                        city: "北京"
+                    });
+                    console.log('地点搜索插件初始化成功');
 
-                        // 初始化地点搜索
-                        placeSearch = new AMap.PlaceSearch({
-                            pageSize: 10,
-                            pageIndex: 1,
-                            city: "北京"
-                        });
-                        console.log('地点搜索插件初始化成功');
+                    // 初始化自动完成
+                    autoComplete = new AMap.AutoComplete({
+                        city: "北京"
+                    });
+                    console.log('自动完成插件初始化成功');
 
-                        // 初始化自动完成
-                        autoComplete = new AMap.AutoComplete({
-                            city: "北京"
-                        });
-                        console.log('自动完成插件初始化成功');
+                    // 添加地图控件
+                    addMapControls();
+                    console.log('地图控件添加尝试完成');
 
-                        // 添加地图控件
-                        addMapControls();
-                        console.log('地图控件添加尝试完成');
-
-                        // 加载室内地图数据
-                        loadIndoorMapData();
-                        console.log('开始加载室内地图数据');
+                    // 加载室内地图数据
+                    loadIndoorMapData();
+                    console.log('开始加载室内地图数据');
 
                         resolve(map);
-                    } catch (error) {
-                        console.error('插件和控件初始化失败:', error);
+                } catch (error) {
+                    console.error('插件和控件初始化失败:', error);
                         reject(error);
-                    }
-                });
+                }
             });
+        });
 
-            // 添加地图加载错误处理
-            map.on('error', function(error) {
-                console.error('地图加载错误:', error);
+        // 添加地图加载错误处理
+        map.on('error', function(error) {
+            console.error('地图加载错误:', error);
                 reject(error);
-            });
-        } catch (error) {
-            console.error('地图初始化失败:', error);
+        });
+    } catch (error) {
+        console.error('地图初始化失败:', error);
             reject(error);
-        }
+    }
     });
 }
 
@@ -291,7 +291,7 @@ function addMapControls() {
         map.addControl(toolBar);
         console.log('工具条控件添加成功');
     } catch (error) {
-        console.error('工具条控件添加失败:', error);
+         console.error('工具条控件添加失败:', error);
     }
 
     try {
@@ -551,11 +551,11 @@ async function searchPlace() {
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
 
-        const keyword = document.getElementById('searchInput').value.trim();
-        if (!keyword) {
-            alert('请输入搜索关键词');
-            return;
-        }
+    const keyword = document.getElementById('searchInput').value.trim();
+    if (!keyword) {
+        alert('请输入搜索关键词');
+        return;
+    }
 
         // 确保场所数据已加载
         if (!searchablePlaces || searchablePlaces.length === 0) {
@@ -566,27 +566,27 @@ async function searchPlace() {
             }
         }
 
-        // 在场所数据中搜索
-        const results = searchablePlaces.filter(place => 
-            place.name.toLowerCase().includes(keyword.toLowerCase())
-        );
+    // 在场所数据中搜索
+    const results = searchablePlaces.filter(place => 
+        place.name.toLowerCase().includes(keyword.toLowerCase())
+    );
 
-        // 显示搜索结果
-        const searchResults = document.getElementById('searchResults');
-        searchResults.innerHTML = '';
-        
-        if (results.length === 0) {
-            searchResults.innerHTML = '<div class="search-result-item">未找到相关场所</div>';
-        } else {
-            results.forEach(place => {
-                const resultItem = document.createElement('div');
-                resultItem.className = 'search-result-item';
-                resultItem.innerHTML = `
-                    <h4>${place.name}</h4>
-                    <p>${place.type || ''}</p>
-                `;
-                
-                // 点击搜索结果时定位到该场所
+    // 显示搜索结果
+    const searchResults = document.getElementById('searchResults');
+    searchResults.innerHTML = '';
+    
+    if (results.length === 0) {
+        searchResults.innerHTML = '<div class="search-result-item">未找到相关场所</div>';
+    } else {
+        results.forEach(place => {
+            const resultItem = document.createElement('div');
+            resultItem.className = 'search-result-item';
+            resultItem.innerHTML = `
+                <h4>${place.name}</h4>
+                <p>${place.type || ''}</p>
+            `;
+            
+            // 点击搜索结果时定位到该场所
                 resultItem.addEventListener('click', async function() {
                     try {
                         // 确保地图实例已初始化
@@ -596,48 +596,48 @@ async function searchPlace() {
                             await new Promise(resolve => setTimeout(resolve, 1000));
                         }
 
-                        // 转换坐标
-                        const [gcjLng, gcjLat] = transformWGS84ToGCJ02(place.location.lng, place.location.lat);
-                        const position = [gcjLng, gcjLat];
+                // 转换坐标
+                const [gcjLng, gcjLat] = transformWGS84ToGCJ02(place.location.lng, place.location.lat);
+                const position = [gcjLng, gcjLat];
                         
                         // 设置地图中心点
-                        map.setCenter(position);
+                map.setCenter(position);
                         map.setZoom(17); // 设置适当的缩放级别
-                        
-                        // 添加标记
-                        const marker = new AMap.Marker({
-                            position: position,
-                            title: place.name,
-                            map: map
-                        });
-                        
-                        // 显示信息窗体
-                        const infoWindow = new AMap.InfoWindow({
-                            content: `<div style="padding:10px;">
-                                <h3>${place.name}</h3>
-                                <p>${place.type || ''}</p>
-                                ${place.description ? `<p>${place.description}</p>` : ''}
-                                <button onclick="showNearbyPlacesWindow([${gcjLng}, ${gcjLat}])">查找附近设施</button>
-                            </div>`,
-                            offset: new AMap.Pixel(0, -30)
-                        });
-                        
-                        infoWindow.open(map, position);
-                        
-                        // 隐藏搜索结果
-                        searchResults.style.display = 'none';
+                
+                // 添加标记
+                const marker = new AMap.Marker({
+                    position: position,
+                    title: place.name,
+                    map: map
+                });
+                
+                // 显示信息窗体
+                const infoWindow = new AMap.InfoWindow({
+                    content: `<div style="padding:10px;">
+                        <h3>${place.name}</h3>
+                        <p>${place.type || ''}</p>
+                        ${place.description ? `<p>${place.description}</p>` : ''}
+                        <button onclick="showNearbyPlacesWindow([${gcjLng}, ${gcjLat}])">查找附近设施</button>
+                    </div>`,
+                    offset: new AMap.Pixel(0, -30)
+                });
+                
+                infoWindow.open(map, position);
+                
+                // 隐藏搜索结果
+                searchResults.style.display = 'none';
                     } catch (error) {
                         console.error('定位场所失败:', error);
                         alert('定位失败，请稍后重试');
                     }
-                });
-                
-                searchResults.appendChild(resultItem);
             });
-        }
-        
-        // 显示搜索结果
-        searchResults.style.display = 'block';
+            
+            searchResults.appendChild(resultItem);
+        });
+    }
+    
+    // 显示搜索结果
+    searchResults.style.display = 'block';
     } catch (error) {
         console.error('搜索失败:', error);
         alert('搜索失败，请稍后重试');
@@ -647,26 +647,26 @@ async function searchPlace() {
 // 确保在页面加载完成后初始化地图
 document.addEventListener('DOMContentLoaded', async function() {
     try {
-        // 初始化地图
+    // 初始化地图
         await initMap();
-        
-        // 加载可搜索的场所数据
+    
+    // 加载可搜索的场所数据
         await loadSearchablePlaces();
-        
-        // 绑定搜索按钮点击事件
-        const searchButton = document.querySelector('.search-box button');
-        if (searchButton) {
-            searchButton.addEventListener('click', searchPlace);
-        }
-        
-        // 绑定搜索框回车事件
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    searchPlace();
-                }
-            });
+    
+    // 绑定搜索按钮点击事件
+    const searchButton = document.querySelector('.search-box button');
+    if (searchButton) {
+        searchButton.addEventListener('click', searchPlace);
+    }
+    
+    // 绑定搜索框回车事件
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchPlace();
+            }
+        });
         }
     } catch (error) {
         console.error('初始化失败:', error);
