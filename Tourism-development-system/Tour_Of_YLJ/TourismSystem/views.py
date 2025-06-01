@@ -57,9 +57,17 @@ def attractions(request):
     sort = request.GET.get("sort", "popularity")  # 默认按热度
     category = request.GET.get("category", "")
     keyword = request.GET.get("keyword", "")
+    
+    # 类别映射字典
+    category_mapping = {
+        'natural': 'nature',  # 将"自然景观"映射到数据库中的"nature"
+    }
+    
     attractions = Attraction.objects.all()
     if category:
-        attractions = attractions.filter(category=category)
+        # 使用映射后的类别值进行筛选
+        db_category = category_mapping.get(category, category)
+        attractions = attractions.filter(category=db_category)
     if keyword:
         attractions = attractions.filter(keywords__icontains=keyword)
     if sort == "rating":
@@ -153,11 +161,42 @@ def index(request):
     
     # 热门推荐：按热度排序取前8个
     hot_attractions = Attraction.objects.order_by("-popularity")[:8]
+
+    # 景点查询和展示功能
+    sort = request.GET.get("sort", "popularity")  # 默认按热度
+    category = request.GET.get("category", "")
+    keyword = request.GET.get("keyword", "")
+    
+    # 类别映射字典
+    category_mapping = {
+        'natural': 'nature',  # 将"自然景观"映射到数据库中的"nature"
+    }
+    
+    attractions = Attraction.objects.all()
+    if category:
+        # 使用映射后的类别值进行筛选
+        db_category = category_mapping.get(category, category)
+        attractions = attractions.filter(category=db_category)
+    if keyword:
+        attractions = attractions.filter(keywords__icontains=keyword)
+    if sort == "rating":
+        attractions = attractions.order_by("-rating", "-rating_count")
+    else:
+        attractions = attractions.order_by("-popularity")
+    paginator = Paginator(attractions, 12)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+    categories = Attraction.CATEGORY_CHOICES
     
     context = {
         "hot_attractions": hot_attractions,
         "spots_1_list": city_rank_list,
         "current_sort": sort_by,  # 传递当前排序方式到模板
+        "page_obj": page_obj,
+        "categories": categories,
+        "current_category": category,
+        "current_keyword": keyword,
+        "sort": sort
     }
     return render(request, "TourismSystem/index.html", context)
 

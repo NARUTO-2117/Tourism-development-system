@@ -188,12 +188,13 @@
                 </div>
             </div>
 
-            <div style="margin: 24px 0;">
+            <div style="margin: 24px 0; display: flex; gap: 12px;">
                 {% if user_diary %}
                     <a href="{% url 'upload_diary' spot_id=attraction.id %}" class="btn btn-warning">修改我的日记</a>
                 {% else %}
                     <a href="{% url 'upload_diary' spot_id=attraction.id %}" class="btn btn-primary">上传日记</a>
                 {% endif %}
+                <a href="{% url 'attractions' %}" class="btn btn-primary">去这里</a>
             </div>
 
             <hr>

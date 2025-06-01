@@ -34,23 +34,6 @@
             </button>
         </form>
     </div>
-    <hr>
-    <div class="diary-comments">
-        <h4>评论 ({{ diary.comments.count }})</h4>
-        {% for comment in diary.comments.all %}
-            <div class="comment-item" style="margin-bottom:10px;">
-                <b>{{ comment.author.username }}</b>：{{ comment.content }}
-                <span style="color:#888;font-size:0.9em;">({{ comment.created_at|date:"Y-m-d H:i" }})</span>
-            </div>
-        {% empty %}
-            <p>暂无评论，快来抢沙发！</p>
-        {% endfor %}
-        <form method="post" action="/TourismSystem/diary/{{ diary.id }}/comment/">
-            {% csrf_token %}
-            <textarea name="content" rows="2" placeholder="写下你的评论..." required style="width:100%;margin-top:10px;"></textarea>
-            <button type="submit" class="btn btn-success" style="margin-top:5px;">发表评论</button>
-        </form>
-    </div>
 </div>
 
 <style>

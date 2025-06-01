@@ -155,24 +155,9 @@
                 <a href="{% url 'log' %}">日志</a>
                 <a href="{% url 'mine' %}">我的</a>
             </div>
-            <div class="nav-center">
-                <div class="search-box">
-                    <input type="text" placeholder="搜索目的地...">
-                    <button type="submit"><i class="search-icon"></i></button>
-                </div>
-            </div>
             <div class="nav-right">
                 <div class="user-profile" id="userProfile">
-                    <!-- <div class="user-avatar" id="userAvatar">
-                        <img src="images/default-avatar.png" alt="用户头像">
-                    </div> -->
                     <div class="user-dropdown" id="userDropdown">
-                        <!-- 登录 -->
-                        <!-- <a href="{% url 'login' %}" id="loginLink">登录</a> -->
-                        <!-- 个人中心，默认隐藏 -->
-                        <!-- <a href="{% url 'mine' %}" id="profileLink" style="display: none;">个人中心</a> -->
-                        <!-- 退出登录，默认隐藏 -->
-                        <!-- <a href="{% url 'logout' %}" id="logoutBtn" style="display: none;">退出登录</a> -->
                         <a href="{% url 'logout' %}" id="logoutBtn">退出登录</a>
                     </div>
                 </div>
@@ -183,10 +168,6 @@
     <main class="attractions-container">
         <div class="left-panel">
             <div class="left-panel-content">
-                <div class="search-container">
-                    <input type="text" id="searchInput" placeholder="搜索场所...">
-                    <button onclick="searchPlaces()">搜索</button>
-                </div>
                 <div class="attractions-list-container">
                     <h3>景点列表</h3>
                     <div id="attractionsList" class="attractions-list">
@@ -246,55 +227,6 @@
             </div>
         </div>
     </main>
-
-    <div class="attractions-filter-bar">
-        <form method="get" style="display:flex;gap:12px;align-items:center;">
-            <select name="category">
-                <option value="">全部类别</option>
-                {% for code, name in categories %}
-                    <option value="{{ code }}" {% if code == current_category %}selected{% endif %}>{{ name }}</option>
-                {% endfor %}
-            </select>
-            <input type="text" name="keyword" placeholder="关键字" value="{{ current_keyword }}">
-            <select name="sort">
-                <option value="popularity" {% if sort == "popularity" %}selected{% endif %}>按热度</option>
-                <option value="rating" {% if sort == "rating" %}selected{% endif %}>按评分</option>
-            </select>
-            <button type="submit" class="btn btn-primary">筛选</button>
-        </form>
-    </div>
-    <div class="attractions-list" style="display:flex;flex-wrap:wrap;gap:24px;margin-top:24px;">
-        {% for attraction in page_obj %}
-            <div class="attraction-card" style="width:280px;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(60,64,67,0.08);padding:18px;">
-                <a href="{% url 'attraction_detail' attraction.id %}">
-                    <img src="{{ attraction.cover.url }}" alt="封面图" style="width:100%;height:160px;object-fit:cover;border-radius:8px;">
-                    <h3 style="margin:12px 0 6px 0;">{{ attraction.name }}</h3>
-                </a>
-                <div>
-                    <span style="background:#e3f0ff;color:#1765c1;padding:2px 8px;border-radius:6px;font-size:0.95em;">{{ attraction.get_category_display }}</span>
-                    <span style="background:#f1f3f4;color:#888;padding:2px 8px;border-radius:6px;font-size:0.95em;">{{ attraction.keywords }}</span>
-                </div>
-                <div style="margin-top:8px;">
-                    <span style="color:#f90;">🔥 {{ attraction.popularity }}</span>
-                    <span style="color:#1765c1;margin-left:10px;">⭐ {{ attraction.rating }}/5</span>
-                </div>
-            </div>
-        {% empty %}
-            <p>暂无景点数据。</p>
-        {% endfor %}
-    </div>
-    <div style="margin-top:24px;">
-        <span>共{{ page_obj.paginator.count }}个景点</span>
-        <div class="pagination">
-            {% if page_obj.has_previous %}
-                <a href="?{% if current_category %}category={{ current_category }}&{% endif %}{% if current_keyword %}keyword={{ current_keyword }}&{% endif %}sort={{ sort }}&page={{ page_obj.previous_page_number }}">上一页</a>
-            {% endif %}
-            <span>第{{ page_obj.number }}/{{ page_obj.paginator.num_pages }}页</span>
-            {% if page_obj.has_next %}
-                <a href="?{% if current_category %}category={{ current_category }}&{% endif %}{% if current_keyword %}keyword={{ current_keyword }}&{% endif %}sort={{ sort }}&page={{ page_obj.next_page_number }}">下一页</a>
-            {% endif %}
-        </div>
-    </div>
 
     <script src="{% static 'TourismSystem/auth.js' %}"></script>
     <script src="{% static 'TourismSystem/map.js' %}"></script>

@@ -9,10 +9,11 @@ logger = logging.getLogger(__name__)
 
 class Attraction(models.Model):
     CATEGORY_CHOICES = [
-        ('nature', '自然景观'),
+        ('', '全部类别'),
+        ('natural', '自然景观'),
+        ('campus', '校园'),
         ('history', '历史古迹'),
         ('city', '城市地标'),
-        ('campus', '校园'),
         ('teaching', '教学楼'),
         ('office', '办公楼'),
         ('dorm', '宿舍楼'),
@@ -26,7 +27,7 @@ class Attraction(models.Model):
         # 可扩展
     ]
     name = models.CharField(max_length=100)
-    category = models.CharField(max_length=30, choices=CATEGORY_CHOICES)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='')
     keywords = models.CharField(max_length=200, blank=True, help_text="用逗号分隔")
     epithet = models.CharField(max_length=200, blank=True)
     popularity = models.IntegerField(default=0)
