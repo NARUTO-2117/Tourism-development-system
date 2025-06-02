@@ -177,6 +177,54 @@
             cursor: pointer;
             margin-left: 8px;
         }
+        .error-message {
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+        }
+        .success-message {
+            color: #2e7d32;
+            background-color: #e8f5e9;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+        }
+        .image-preview {
+            margin-top: 16px;
+            max-width: 300px;
+        }
+        .preview-item {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .preview-item .remove-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.5);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
     </style>
 </head>
 <body>
@@ -202,29 +250,57 @@
                 <h2>发布旅行日记</h2>
                 <p>分享你的旅行故事，记录美好瞬间</p>
             </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="{% if message.tags == 'error' %}error-message{% else %}success-message{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="form-group">
-                    <label for="title">标题</label>
-                    <input type="text" id="title" name="title" class="form-control" required>
+                    <label for="id_title">标题</label>
+                    <input type="text" id="id_title" name="title" class="form-control" value="{{ form.title.value|default:'' }}" required>
+                    {% if form.title.errors %}
+                        <div class="error-message">{{ form.title.errors.0 }}</div>
+                    {% endif %}
                 </div>
                 <div class="form-group">
-                    <label for="content">内容</label>
-                    <textarea id="content" name="content" class="form-control" required></textarea>
+                    <label for="id_content">内容</label>
+                    <textarea id="id_content" name="content" class="form-control" required>{{ form.content.value|default:'' }}</textarea>
+                    {% if form.content.errors %}
+                        <div class="error-message">{{ form.content.errors.0 }}</div>
+                    {% endif %}
                 </div>
                 <div class="form-group">
                     <label>评分</label>
                     <div class="rating-group">
                         {% for i in "54321" %}
-                            <input type="radio" name="rating" value="{{ i }}" id="rating{{ i }}" class="rating-input" required>
+                            <input type="radio" name="rating" value="{{ i }}" id="rating{{ i }}" class="rating-input" {% if form.rating.value == i %}checked{% endif %} required>
                             <label for="rating{{ i }}" class="rating-label">★</label>
                         {% endfor %}
                     </div>
+                    {% if form.rating.errors %}
+                        <div class="error-message">{{ form.rating.errors.0 }}</div>
+                    {% endif %}
                 </div>
                 <div class="form-group">
-                    <label for="image">上传图片</label>
-                    <input type="file" id="image" name="image" class="form-control" accept="image/*" multiple>
-                    <div class="image-preview" id="imagePreview"></div>
+                    <label for="id_image">上传图片</label>
+                    <input type="file" id="id_image" name="image" class="form-control" accept="image/*">
+                    {% if form.image.errors %}
+                        <div class="error-message">{{ form.image.errors.0 }}</div>
+                    {% endif %}
+                    <div class="image-preview" id="imagePreview">
+                        {% if form.instance.image %}
+                            <div class="preview-item">
+                                <img src="{{ form.instance.image.url }}" alt="当前图片">
+                                <button type="button" class="remove-btn" onclick="clearImage()">×</button>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
                 <button type="submit" class="upload-btn">发布日记</button>
             </form>
@@ -234,34 +310,71 @@
     <script src="{% static 'TourismSystem/auth.js' %}"></script>
     <script>
         // 图片预览功能
-        document.getElementById('image').addEventListener('change', function(e) {
+        document.getElementById('id_image').addEventListener('change', function(e) {
             const preview = document.getElementById('imagePreview');
             preview.innerHTML = '';
             
-            [...e.target.files].forEach(file => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const div = document.createElement('div');
                     div.className = 'preview-item';
                     div.innerHTML = `
                         <img src="${e.target.result}" alt="预览图">
-                        <button type="button" class="remove-btn" onclick="this.parentElement.remove()">×</button>
+                        <button type="button" class="remove-btn" onclick="clearImage()">×</button>
                     `;
                     preview.appendChild(div);
-                }
+                };
                 reader.readAsDataURL(file);
+            }
+        });
+
+        function clearImage() {
+            const preview = document.getElementById('imagePreview');
+            preview.innerHTML = '';
+            document.getElementById('id_image').value = '';
+        }
+
+        // 处理星级评分
+        const ratingInputs = document.querySelectorAll('.rating-input');
+        const ratingValue = document.getElementById('id_rating');
+
+        ratingInputs.forEach(input => {
+            input.addEventListener('change', function() {
+                ratingValue.value = this.value;
             });
         });
 
-        // 表单验证
+        // 表单提交前验证
         document.querySelector('form').addEventListener('submit', function(e) {
-            const title = document.getElementById('title').value.trim();
-            const content = document.getElementById('content').value.trim();
-            const rating = document.querySelector('input[name="rating"]:checked');
-            
-            if (!title || !content || !rating) {
+            const title = document.getElementById('id_title').value.trim();
+            const content = document.getElementById('id_content').value.trim();
+            const rating = document.getElementById('id_rating').value;
+            const image = document.getElementById('id_image').files[0];
+
+            if (!title) {
                 e.preventDefault();
-                alert('请填写所有必填字段！');
+                alert('请输入标题');
+                return;
+            }
+
+            if (!content) {
+                e.preventDefault();
+                alert('请输入内容');
+                return;
+            }
+
+            if (!rating) {
+                e.preventDefault();
+                alert('请选择评分');
+                return;
+            }
+
+            if (image && image.size > 5 * 1024 * 1024) {
+                e.preventDefault();
+                alert('图片大小不能超过5MB');
+                return;
             }
         });
     </script>

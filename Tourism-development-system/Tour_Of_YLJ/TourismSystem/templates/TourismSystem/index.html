@@ -284,7 +284,7 @@
                 <a href="{% url 'index' %}">首页</a>
                 <a href="{% url 'attractions' %}" class="logo">旅游系统</a>
                 <a href="{% url 'log' %}">日志</a>
-                <a href="{% url 'mine' %}">我的</a>
+                <a href="{% url 'food_recommendation' %}">美食推荐</a>
             </div>
             <div class="search_con fr">
                 <div class="search-box" style="display: flex; align-items: center; gap: 12px;">
@@ -498,75 +498,100 @@
         function performSearch(val, sortBy = 'popularity') {
             if(!val) {
                 $("#search_tips_con").hide();
-                return false;
+                return;
             }
 
+            // 显示加载消息
+            const resultsList = $("#search_tips_con ul");
+            resultsList.empty().append('<li><a href="#">加载中...</a></li>');
+            $("#search_tips_con").show();
+
+            // 获取CSRF令牌
+            const csrftoken = getCookie('csrftoken');
+
+            // 构建请求体，包含搜索关键词和排序方式
+            const requestBody = new FormData();
+            requestBody.append('q', val);
+            requestBody.append('sort_by', sortBy);
+
             $.ajax({
-                url: '/TourismSystem/search_places/',
-                method: 'POST',
+                url: '/TourismSystem/search_places/', // 确保这是正确的后端搜索URL
+                type: 'POST',
+                data: requestBody,
+                processData: false,
+                contentType: false,
                 headers: {
-                    'X-CSRFToken': getCookie('csrftoken')
+                    'X-CSRFToken': csrftoken
                 },
-                data: {
-                    'q': val,
-                    'sort_by': sortBy
-                },
-                success: function(res) {
-                    if(res.code === 200) {
-                        let htmlStr = '';
-                        if(res.data && res.data.length > 0) {
-                            res.data.forEach(function(item, index) {
-                                htmlStr += `
-                                    <li style="margin: 0; padding: 0;">
-                                        <a href="${item.url}" style="display: flex; align-items: center; gap: 10px; color: #333; text-decoration: none; font-size: 1.08rem; padding: 10px 18px; border-radius: 8px; transition: background 0.2s, color 0.2s; font-weight: 500; box-shadow: 0 1px 4px rgba(60,64,67,0.06); background: #f8fafc;">
-                                            <span style="background: #e3f0ff; color: #1a73e8; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700;">${index + 1}</span>
-                                            <span>${item.name}</span>
-                                        </a>
-                                    </li>`;
-                            });
-                        } else {
-                            htmlStr = '<li style="padding: 12px; text-align: center; color: #666;">没有找到相关景点</li>';
-                        }
-                        $("#search_tips_con ul").html(htmlStr);
-                        $("#search_tips_con").show();
+                success: function(response) {
+                    resultsList.empty(); // 清空加载消息
+                    if (response.code === 200 && response.data.length > 0) {
+                        response.data.forEach(item => {
+                            // 不再添加后缀，直接使用后端返回的名称
+                            resultsList.append(`<li><a href="${item.url}">${item.name}</a></li>`);
+                        });
                     } else {
-                        console.error('搜索失败:', res.msg);
+                        resultsList.append('<li><a href="#">未找到相关景点</a></li>');
                     }
                 },
                 error: function(xhr, status, error) {
-                    console.error('搜索请求失败:', error);
+                    console.error('搜索请求失败:', status, error);
+                    resultsList.empty().append('<li><a href="#">搜索失败</a></li>');
                 }
             });
         }
 
-        $(document).ready(function() {
-            // 搜索框输入事件
-            $('#top_search').on('input', function() {
-                const val = $(this).val();
-                const sortBy = $('#searchSortSelect').val();
-                performSearch(val, sortBy);
-            });
-
-            // 排序方式改变事件
-            $('#searchSortSelect').on('change', function() {
-                const val = $('#top_search').val();
-                const sortBy = $(this).val();
-                performSearch(val, sortBy);
-            });
-
-            // 点击搜索结果后清空搜索框并隐藏结果
-            $(document).on('click', '#search_tips_con a', function() {
-                $('#top_search').val('');
-                $('#search_tips_con').hide();
-            });
-
-            // 点击页面其他区域隐藏搜索结果
-            $(document).on('click', function(e) {
-                if (!$(e.target).closest('.search-box').length) {
-                    $('#search_tips_con').hide();
-                }
-            });
+        // 输入框内容变化时触发搜索
+        $("#top_search").on('input', function() {
+            const query = $(this).val();
+            const sortBy = $("#searchSortSelect").val();
+            performSearch(query, sortBy);
         });
+
+        // 排序方式变化时触发搜索
+        $("#searchSortSelect").on('change', function() {
+            const query = $("#top_search").val();
+            const sortBy = $(this).val();
+            if (query) { // 只有在输入框有内容时才触发搜索
+                performSearch(query, sortBy);
+            }
+        });
+
+        // 点击页面其他地方隐藏搜索建议
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.search-box').length) {
+                $("#search_tips_con").hide();
+            }
+        });
+
+        // 阻止点击搜索建议区域隐藏建议
+        $("#search_tips_con").on('click', function(e) {
+            // 允许点击链接时执行默认行为
+            if (!$(e.target).is('a')) {
+                e.stopPropagation();
+            }
+        });
+
+        // 初始隐藏搜索建议
+        $("#search_tips_con").hide();
+
+        // 根据登录状态显示/隐藏个人中心和退出按钮
+        // const userProfile = document.getElementById('userProfile');
+        // const loginLink = document.getElementById('loginLink');
+        // const profileLink = document.getElementById('profileLink');
+        // const logoutBtn = document.getElementById('logoutBtn');
+
+        // // 检查用户是否已认证（通过Django模板变量或后端传递的状态）
+        // {% if user.is_authenticated %}
+        //     // loginLink.style.display = 'none';
+        //     // profileLink.style.display = 'block';
+        //     // logoutBtn.style.display = 'block';
+        // {% else %}
+        //     // loginLink.style.display = 'block';
+        //     // profileLink.style.display = 'none';
+        //     // logoutBtn.style.display = 'none';
+        // {% endif %}
+
     </script>
     <script>
         document.getElementById('filterForm').addEventListener('submit', function(e) {

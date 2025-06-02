@@ -37,30 +37,79 @@
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     position => {
-                        // 获取WGS84坐标
-                        const wgs84Lat = position.coords.latitude;
-                        const wgs84Lng = position.coords.longitude;
-                        
-                        // 转换为GCJ02坐标
-                        const [gcjLng, gcjLat] = window.transformWGS84ToGCJ02(wgs84Lng, wgs84Lat);
-                        
-                        routeCurrentLocation = {
-                            lat: gcjLat,
-                            lng: gcjLng
-                        };
-                        console.log('当前位置:', {
-                            wgs84: { lat: wgs84Lat, lng: wgs84Lng },
-                            gcj02: routeCurrentLocation
-                        });
-                        resolve(routeCurrentLocation);
+                        try {
+                            // 获取WGS84坐标
+                            const wgs84Lat = position.coords.latitude;
+                            const wgs84Lng = position.coords.longitude;
+                            
+                            // 转换为GCJ02坐标
+                            const [gcjLng, gcjLat] = window.transformWGS84ToGCJ02(wgs84Lng, wgs84Lat);
+                            
+                            // 验证坐标是否有效
+                            if (isNaN(gcjLng) || isNaN(gcjLat)) {
+                                throw new Error('坐标转换结果无效');
+                            }
+
+                            // 验证坐标是否在合理范围内
+                            if (gcjLng < 72.004 || gcjLng > 137.8347 || gcjLat < 0.8293 || gcjLat > 55.8271) {
+                                throw new Error('坐标超出中国范围');
+                            }
+
+                            routeCurrentLocation = {
+                                lat: gcjLat,
+                                lng: gcjLng
+                            };
+
+                            console.log('当前位置:', {
+                                wgs84: { lat: wgs84Lat, lng: wgs84Lng },
+                                gcj02: routeCurrentLocation
+                            });
+
+                            // 在地图上标记当前位置
+                            if (window.map) {
+                                const marker = new AMap.Marker({
+                                    position: [gcjLng, gcjLat],
+                                    title: '我的位置',
+                                    icon: new AMap.Icon({
+                                        size: new AMap.Size(25, 34),
+                                        image: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png',
+                                        imageSize: new AMap.Size(25, 34)
+                                    })
+                                });
+                                marker.setMap(window.map);
+                            }
+
+                            resolve(routeCurrentLocation);
+                        } catch (error) {
+                            console.error('坐标处理失败:', error);
+                            reject(error);
+                        }
                     },
                     error => {
                         console.error('获取位置失败:', error);
-                        reject(error);
+                        // 如果获取位置失败，使用默认位置（可以根据实际情况修改）
+                        const defaultLocation = {
+                            lat: 39.9606,
+                            lng: 116.3586
+                        };
+                        console.warn('使用默认位置:', defaultLocation);
+                        resolve(defaultLocation);
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
                     }
                 );
             } else {
-                reject(new Error('浏览器不支持地理定位'));
+                console.error('浏览器不支持地理定位');
+                // 如果浏览器不支持地理定位，使用默认位置
+                const defaultLocation = {
+                    lat: 39.9606,
+                    lng: 116.3586
+                };
+                console.warn('使用默认位置:', defaultLocation);
+                resolve(defaultLocation);
             }
         });
     }

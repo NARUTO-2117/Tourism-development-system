@@ -2,10 +2,10 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.http import HttpResponseRedirect, JsonResponse
 from django.contrib.auth.decorators import login_required
-from .models import Attraction, Diary, DiaryComment, DiaryLike
+from .models import Attraction, Diary, DiaryComment, DiaryLike, Food, FoodReview
 from django.views.decorators.http import require_POST, require_http_methods
 from django.core.exceptions import PermissionDenied
-from .forms import DiaryForm
+from .forms import DiaryForm, UserRegistrationForm
 from django.db.models import Q, F, Count, Avg
 from django.core.paginator import Paginator
 from django.views import View
@@ -15,12 +15,12 @@ from django.core.files.storage import FileSystemStorage
 import os
 import json
 from django.core.cache import cache
-import zlib
 import logging
 import base64
 from django.contrib.auth import authenticate, login, logout
-from django.contrib import messages
 from django.contrib.auth.models import User
+from .food_algorithms import FoodFinder, FoodSorter
+import random
 
 # 配置日志
 logger = logging.getLogger(__name__)
@@ -92,27 +92,51 @@ def log(request):
     # 支持按热度、评分、时间排序和筛选
     sort = request.GET.get("sort", "popularity")
     keyword = request.GET.get("keyword", "")
+    location = request.GET.get("location", "")  # 新增景点地址搜索
+    
+    # 获取所有日记，并预加载相关数据
     diaries = Diary.objects.select_related('author', 'attraction')
-    if keyword:
-        diaries = diaries.filter(
-            Q(title__icontains=keyword) |
-            Q(content__icontains=keyword) |
-            Q(attraction__name__icontains=keyword)
-        )
+    
+    # 构建搜索条件
+    if keyword or location:
+        query = Q()
+        if keyword:
+            query |= Q(title__icontains=keyword)
+            # 对于压缩的内容，先解压再搜索
+            for diary in diaries:
+                try:
+                    if diary.content:
+                        decompressed_content = diary.get_content()
+                        if keyword.lower() in decompressed_content.lower():
+                            query |= Q(id=diary.id)
+                except:
+                    continue
+        if location:
+            query &= Q(attraction__name__icontains=location)
+        diaries = diaries.filter(query)
+    
+    # 应用排序
     if sort == "rating":
         diaries = diaries.order_by("-rating", "-created_at")
     elif sort == "time":
         diaries = diaries.order_by("-created_at")
-    else:
+    else:  # popularity
         diaries = diaries.order_by("-popularity", "-created_at")
+    
     # 分页
     paginator = Paginator(diaries, 10)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
+    
+    # 获取所有景点名称用于搜索建议
+    attractions = Attraction.objects.values_list('name', flat=True)
+    
     return render(request, "TourismSystem/log.html", {
         "page_obj": page_obj,
         "sort": sort,
         "keyword": keyword,
+        "location": location,
+        "attractions": list(attractions),  # 转换为列表以便在模板中使用
     })
 
 def login_view(request):
@@ -229,22 +253,29 @@ def search(request):
     })
 
 def attraction_detail(request, spot_id):
-    if not request.user.is_authenticated:
-        return HttpResponseRedirect(reverse("login"))
-    # 用Attraction模型替换spots_1
-    attraction = get_object_or_404(Attraction, id=spot_id)
-    # 获取该景点下所有日记，按热度和时间排序
-    diaries = Diary.objects.filter(attraction=attraction).order_by('-popularity', '-created_at')
-    # 判断当前用户是否已上传过日记
-    user_diary = None
-    if request.user.is_authenticated:
-        user_diary = Diary.objects.filter(author=request.user, attraction=attraction).first()
-    context = {
-        "attraction": attraction,
+    """景点详情页面，添加了美食推荐功能"""
+    # 获取景点信息
+    spot = get_object_or_404(Attraction, id=spot_id)
+    
+    # 获取景点评分信息
+    avg_rating = Diary.objects.filter(attraction=spot).aggregate(Avg('rating'))
+    if avg_rating['rating__avg'] is not None:
+        spot_rating = round(avg_rating['rating__avg'], 1)
+    else:
+        spot_rating = 0
+    
+    # 获取相关日记
+    diaries = Diary.objects.filter(attraction=spot).order_by('-created_at')[:5]
+    
+    # 获取景点附近的美食，按热度排序
+    nearby_foods = Food.objects.filter(attraction=spot).order_by('-popularity')[:5]
+    
+    return render(request, "TourismSystem/attraction_detail.html", {
+        "spot": spot,
+        "spot_rating": spot_rating,
         "diaries": diaries,
-        "user_diary": user_diary,
-    }
-    return render(request, "TourismSystem/attraction_detail.html", context)
+        "nearby_foods": nearby_foods,  # 添加附近美食数据
+    })
 
 def compress_content(content):
     """压缩日记内容"""
@@ -262,88 +293,119 @@ def compress_content(content):
 def decompress_content(compressed_content):
     """解压日记内容"""
     try:
+        logger.debug(f"尝试解压内容: {compressed_content[:50]}...") # 记录前50个字符
         # 将base64字符串转换回字节
         compressed_bytes = base64.b64decode(compressed_content)
+        logger.debug(f"Base64 解码后的字节: {compressed_bytes[:50]}...") # 记录前50个字节
         # 使用zlib解压
         decompressed = zlib.decompress(compressed_bytes)
+        logger.debug(f"Zlib 解压后的字节: {decompressed[:50]}...") # 记录前50个字节
         # 将解压后的字节转换回字符串
-        return decompressed.decode('utf-8')
+        decoded_content = decompressed.decode('utf-8')
+        logger.debug(f"UTF-8 解码后的字符串: {decoded_content[:50]}...") # 记录前50个字符
+        return decoded_content
     except Exception as e:
         logger.error(f"解压内容时发生错误: {str(e)}")
         return compressed_content
 
 @login_required
 def upload_diary(request, spot_id):
-    attraction = get_object_or_404(Attraction, id=spot_id)
-    user = request.user
+    """上传旅游日记的视图函数"""
+    try:
+        attraction = get_object_or_404(Attraction, id=spot_id)
+        user = request.user
 
-    # 检查是否已上传过日记
-    existing_diary = Diary.objects.filter(author=user, attraction=attraction).first()
-    if existing_diary and not existing_diary.can_modify_rating:
-        # 已上传且评分不可再改，禁止再次上传
-        return render(request, "TourismSystem/diary_upload.html", {
-            "error": "您已上传过该景点的日记且评分已修改过，不能再次上传。",
-            "attraction": attraction,
-            "diary": existing_diary,
-            "form": DiaryForm(instance=existing_diary)
-        })
+        # 检查是否已上传过日记
+        existing_diary = Diary.objects.filter(author=user, attraction=attraction).first()
+        if existing_diary and not existing_diary.can_modify_rating:
+            messages.error(request, "您已上传过该景点的日记且评分已修改过，不能再次上传。")
+            return render(request, "TourismSystem/diary_upload.html", {
+                "attraction": attraction,
+                "diary": existing_diary,
+                "form": DiaryForm(instance=existing_diary)
+            })
 
-    if request.method == "POST":
-        form = DiaryForm(request.POST, request.FILES, instance=existing_diary)
-        if form.is_valid():
-            diary = form.save(commit=False)
-            diary.author = user
-            diary.attraction = attraction
+        if request.method == "POST":
+            logger.info(f"Received diary upload request for attraction {spot_id} from user {user.username}")
+            form = DiaryForm(request.POST, request.FILES, instance=existing_diary if existing_diary else None)
             
-            # 压缩日记内容
-            if diary.content:
-                diary.content = compress_content(diary.content)
-            
-            # 评分只能修改一次
-            if existing_diary:
-                if existing_diary.can_modify_rating:
-                    diary.can_modify_rating = False
-                else:
-                    # 已经修改过评分，不能再改
+            if form.is_valid():
+                try:
+                    diary = form.save(commit=False)
+                    diary.author = user
+                    diary.attraction = attraction
+                    
+                    # 评分只能修改一次
+                    if existing_diary and existing_diary.can_modify_rating:
+                        diary.can_modify_rating = False
+
+                    # 保存日记（内容会在save方法中自动压缩）
+                    diary.save()
+                    logger.info(f"Successfully saved diary ID: {diary.id}")
+
+                    # 更新景点评分
+                    try:
+                        diaries = Diary.objects.filter(attraction=attraction)
+                        if diaries.exists():
+                            total_score = sum([d.rating for d in diaries])
+                            attraction.rating = round(total_score / diaries.count(), 1)
+                            attraction.rating_count = diaries.count()
+                        else:
+                            attraction.rating = 0
+                            attraction.rating_count = 0
+                        attraction.save()
+                        logger.info(f"Updated attraction rating for ID: {attraction.id}")
+                    except Exception as e:
+                        logger.error(f"Error updating attraction rating: {e}")
+                        messages.warning(request, "日记已保存，但更新景点评分时出现错误。")
+
+                    messages.success(request, "日记上传成功！")
+                    return redirect('diary_detail', diary_id=diary.id)
+
+                except Exception as e:
+                    logger.error(f"Error saving diary: {e}", exc_info=True)
+                    messages.error(request, f"保存日记时发生错误: {str(e)}")
                     return render(request, "TourismSystem/diary_upload.html", {
-                        "error": "您已修改过评分，不能再次修改。",
+                        "form": form,
                         "attraction": attraction,
                         "diary": existing_diary,
-                        "form": form
                     })
-            
-            diary.save()
-            
-            # 更新景点评分
-            diaries = Diary.objects.filter(attraction=attraction)
-            total_score = sum([d.rating for d in diaries])
-            attraction.rating = round(total_score / diaries.count(), 1)
-            attraction.rating_count = diaries.count()
-            attraction.save()
-            
-            return redirect('diary_detail', diary_id=diary.id)
-    else:
-        form = DiaryForm(instance=existing_diary)
+            else:
+                logger.warning(f"Form validation failed: {form.errors}")
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        messages.error(request, f"{field}: {error}")
+                return render(request, "TourismSystem/diary_upload.html", {
+                    "form": form,
+                    "attraction": attraction,
+                    "diary": existing_diary,
+                })
 
-    return render(request, "TourismSystem/diary_upload.html", {
-        "form": form,
-        "attraction": attraction,
-        "diary": existing_diary
-    })
+        else:  # GET request
+            form = DiaryForm(instance=existing_diary if existing_diary else None)
+            if existing_diary:
+                existing_diary.content = existing_diary.get_content()
+            return render(request, "TourismSystem/diary_upload.html", {
+                "form": form,
+                "attraction": attraction,
+                "diary": existing_diary
+            })
+
+    except Exception as e:
+        logger.error(f"Unexpected error in upload_diary: {e}", exc_info=True)
+        messages.error(request, "发生意外错误，请稍后重试。")
+        return redirect('index')
 
 def diary_detail(request, diary_id):
     diary = get_object_or_404(Diary, id=diary_id)
-    
-    # 解压日记内容
-    if diary.content:
-        try:
-            diary.content = decompress_content(diary.content)
-        except:
-            # 如果解压失败，保持原内容不变
-            pass
+    # 获取解压后的内容
+    diary.content = diary.get_content()
+    # 获取日记的所有评论
+    comments = DiaryComment.objects.filter(diary=diary).order_by('-created_at')
     
     return render(request, "TourismSystem/diary_detail.html", {
-        "diary": diary
+        "diary": diary,
+        "comments": comments,
     })
 
 @login_required
@@ -453,7 +515,10 @@ def search_diaries(request):
         # 应用排序
         if sort == 'popularity':
             diaries = diaries.annotate(
-                popularity_score=F('likes') * 0.4 + F('comments') * 0.3 + F('views') * 0.3
+                likes_count=Count('likes'),
+                comments_count=Count('diary_comments')
+            ).annotate(
+                popularity_score=F('likes_count') * 0.4 + F('comments_count') * 0.3 + F('views') * 0.3
             ).order_by('-popularity_score')
         elif sort == 'rating':
             diaries = diaries.order_by('-rating')
@@ -473,7 +538,7 @@ def search_diaries(request):
                 {
                     'id': diary.id,
                     'title': diary.title,
-                    'content': decompress_content(diary.content) if diary.content else '',
+                    'content': diary.content if diary.content else '',
                     'attraction': {
                         'name': diary.attraction.name,
                     },
@@ -565,22 +630,27 @@ def search_attractions(request):
 
 def register(request):
     if request.method == "POST":
-        username = request.POST["username"]
-        password = request.POST["password"]
-        email = request.POST["email"]
-        
-        # 检查用户名是否已存在
-        if User.objects.filter(username=username).exists():
-            return render(request, "TourismSystem/register.html", {
-                "message": "用户名已存在"
-            })
-        
-        # 创建新用户
-        user = User.objects.create_user(username=username, email=email, password=password)
-        login(request, user)
-        return HttpResponseRedirect(reverse("index"))
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            try:
+                user = form.save()
+                login(request, user)
+                messages.success(request, "注册成功！欢迎加入我们。")
+                return redirect('index')
+            except Exception as e:
+                logger.error(f"注册失败: {str(e)}")
+                messages.error(request, "注册过程中发生错误，请稍后重试。")
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
     else:
-        return render(request, "TourismSystem/register.html")
+        form = UserRegistrationForm()
+    
+    return render(request, "TourismSystem/register.html", {
+        "form": form,
+        "title": "注册"
+    })
 
 def logout_view(request):
     logout(request)
@@ -763,17 +833,43 @@ def search_places(request):
                 'msg': '搜索关键词不能为空'
             })
         
-        # 构建搜索关键词列表
-        search_terms = query.split()
-        search_query = Q()
+        # 定义常见缩写映射
+        common_abbreviations = {
+            '北邮': '北京邮电大学',
+            '北大': '北京大学',
+            '清华': '清华大学',
+            '人大': '中国人民大学',
+            '北航': '北京航空航天大学',
+            '北理': '北京理工大学',
+            '北师': '北京师范大学',
+            '北外': '北京外国语大学',
+            '北交': '北京交通大学',
+            '北科': '北京科技大学',
+            '北工': '北京工业大学',
+            '北林': '北京林业大学',
+            '北农': '北京农业大学',
+            '北医': '北京大学医学部',
+            '北影': '北京电影学院',
+            '北舞': '北京舞蹈学院',
+            '北音': '北京音乐学院',
+            '北体': '北京体育大学',
+            '北语': '北京语言大学',
+            '北化': '北京化工大学'
+        }
         
-        # 对每个搜索词构建查询条件
+        # 构建搜索关键词列表
+        search_terms = [query]
+        
+        # 检查是否匹配缩写
+        for abbr, full in common_abbreviations.items():
+            if abbr in query:
+                search_terms.append(query.replace(abbr, full))
+        
+        # 构建查询条件
+        search_query = Q()
         for term in search_terms:
             term_query = Q(name__icontains=term) | Q(category__icontains=term) | Q(keywords__icontains=term)
             search_query |= term_query
-        
-        # 添加完整匹配的查询条件
-        search_query |= Q(name__icontains=query) | Q(category__icontains=query) | Q(keywords__icontains=query)
         
         # 在数据库中搜索
         attractions = Attraction.objects.filter(search_query).distinct()
@@ -807,3 +903,297 @@ def search_places(request):
             'code': 500,
             'msg': '搜索失败，请稍后重试'
         })
+
+# 美食推荐相关视图
+@login_required
+def food_recommendation(request):
+    """美食推荐页面"""
+    # 获取筛选和排序参数
+    sort_by = request.GET.get('sort_by', 'popularity')  # 默认按热度排序
+    cuisine = request.GET.get('cuisine', '')  # 默认不筛选菜系
+    search_query = request.GET.get('query', '')  # 搜索关键词
+    attraction_id = request.GET.get('attraction_id', None)  # 景点ID
+    
+    # 使用FoodFinder进行搜索和筛选
+    foods = FoodFinder.search_foods(search_query, cuisine)
+    
+    # 如果提供了景点ID，筛选该景点附近的美食
+    if attraction_id:
+        foods = FoodFinder.filter_by_attraction(foods, attraction_id)
+    
+    # 获取用户位置（如果提供）
+    user_lat = request.GET.get('lat', None)
+    user_lon = request.GET.get('lon', None)
+    if user_lat and user_lon:
+        try:
+            user_lat = float(user_lat)
+            user_lon = float(user_lon)
+        except ValueError:
+            user_lat = user_lon = None
+    
+    # 使用优化的算法获取前10个美食
+    top_foods = FoodSorter.get_top_k_foods(foods, 10, sort_by, user_lat, user_lon)
+    
+    # 如果结果不足10个，则使用普通排序获取所有结果
+    if len(top_foods) < 10:
+        top_foods = FoodSorter.sort_foods(foods, sort_by, user_lat, user_lon)
+    
+    # 分页
+    paginator = Paginator(top_foods, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+    
+    # 获取所有菜系选项
+    cuisine_choices = Food.CUISINE_CHOICES
+    
+    # 获取所有景点
+    attractions = Attraction.objects.all()
+    
+    return render(request, "TourismSystem/food_recommendation.html", {
+        "page_obj": page_obj,
+        "sort_by": sort_by,
+        "cuisine": cuisine,
+        "cuisine_choices": cuisine_choices,
+        "query": search_query,
+        "attraction_id": attraction_id,
+        "attractions": attractions,
+    })
+
+@login_required
+def food_detail(request, food_id):
+    """美食详情页面"""
+    food = get_object_or_404(Food, id=food_id)
+    
+    # 获取用户之前的评价（如果有）
+    user_review = FoodReview.objects.filter(food=food, user=request.user).first()
+    
+    # 获取所有评价
+    reviews = FoodReview.objects.filter(food=food).select_related('user').order_by('-created_at')
+    
+    # 处理提交评价
+    if request.method == 'POST':
+        rating = request.POST.get('rating')
+        content = request.POST.get('content', '')
+        
+        if rating:
+            try:
+                rating = float(rating)
+                # 确保评分在1-5之间
+                rating = max(1.0, min(5.0, rating))
+                
+                # 创建或更新评价
+                if user_review:
+                    user_review.rating = rating
+                    user_review.content = content
+                    user_review.save()
+                else:
+                    user_review = FoodReview.objects.create(
+                        food=food,
+                        user=request.user,
+                        rating=rating,
+                        content=content
+                    )
+                
+                # 更新美食的平均评分
+                avg_rating = FoodReview.objects.filter(food=food).aggregate(Avg('rating'))['rating__avg'] or 0.0
+                food.rating = avg_rating
+                food.rating_count = FoodReview.objects.filter(food=food).count()
+                food.save()
+                
+                messages.success(request, '评价已提交')
+                return redirect('food_detail', food_id=food.id)
+            except ValueError:
+                messages.error(request, '无效的评分')
+    
+    # 获取相似美食推荐
+    similar_foods = Food.objects.filter(
+        Q(cuisine=food.cuisine) | Q(restaurant=food.restaurant)
+    ).exclude(id=food.id).order_by('-popularity')[:5]
+    
+    return render(request, "TourismSystem/food_detail.html", {
+        "food": food,
+        "user_review": user_review,
+        "reviews": reviews,
+        "similar_foods": similar_foods,
+    })
+
+@require_http_methods(["GET"])
+def search_foods(request):
+    """API端点：搜索美食"""
+    query = request.GET.get('query', '')
+    cuisine = request.GET.get('cuisine', '')
+    attraction_id = request.GET.get('attraction_id', None)
+    sort_by = request.GET.get('sort_by', 'popularity')
+    limit = int(request.GET.get('limit', 10))
+    
+    # 搜索美食
+    foods = FoodFinder.search_foods(query, cuisine)
+    
+    # 筛选景点
+    if attraction_id:
+        foods = FoodFinder.filter_by_attraction(foods, attraction_id)
+    
+    # 获取用户位置
+    user_lat = request.GET.get('lat', None)
+    user_lon = request.GET.get('lon', None)
+    if user_lat and user_lon:
+        try:
+            user_lat = float(user_lat)
+            user_lon = float(user_lon)
+        except ValueError:
+            user_lat = user_lon = None
+    
+    # 获取前N个结果
+    top_foods = FoodSorter.get_top_k_foods(foods, limit, sort_by, user_lat, user_lon)
+    
+    # 格式化结果
+    results = []
+    for food in top_foods:
+        results.append({
+            'id': food.id,
+            'name': food.name,
+            'restaurant': food.restaurant,
+            'cuisine': food.get_cuisine_display(),
+            'price': float(food.price),
+            'rating': food.rating,
+            'rating_count': food.rating_count,
+            'image_url': food.image.url if food.image else None,
+            'attraction_id': food.attraction_id,
+            'attraction_name': food.attraction.name,
+        })
+    
+    return JsonResponse({
+        'results': results,
+        'total': len(foods),
+        'query': query,
+        'cuisine': cuisine,
+    })
+
+@login_required
+def add_food_review(request, food_id):
+    """添加美食评价"""
+    food = get_object_or_404(Food, id=food_id)
+    
+    if request.method == 'POST':
+        rating = request.POST.get('rating')
+        content = request.POST.get('content', '')
+        
+        if rating:
+            try:
+                rating = float(rating)
+                # 确保评分在1-5之间
+                rating = max(1.0, min(5.0, rating))
+                
+                # 创建或更新评价
+                review, created = FoodReview.objects.update_or_create(
+                    food=food,
+                    user=request.user,
+                    defaults={
+                        'rating': rating,
+                        'content': content
+                    }
+                )
+                
+                # 更新美食的平均评分
+                avg_rating = FoodReview.objects.filter(food=food).aggregate(Avg('rating'))['rating__avg'] or 0.0
+                food.rating = avg_rating
+                food.rating_count = FoodReview.objects.filter(food=food).count()
+                food.save()
+                
+                messages.success(request, '评价已提交')
+            except ValueError:
+                messages.error(request, '无效的评分')
+    
+    return redirect('food_detail', food_id=food.id)
+
+# 伪造美食数据
+@login_required
+def load_demo_foods(request):
+    # 清空现有数据
+    Food.objects.all().delete()
+    
+    # 获取或创建三个食堂
+    student_canteen = Attraction.objects.get_or_create(name='学生食堂')[0]
+    flavor_canteen = Attraction.objects.get_or_create(name='风味食堂')[0]
+    comprehensive_canteen = Attraction.objects.get_or_create(name='综合食堂')[0]
+    
+    # 伪造美食数据
+    foods = [
+        {
+            'name': '红烧肉',
+            'restaurant': '学生食堂',
+            'attraction': student_canteen,
+            'price': 15.0,
+            'cuisine': 'chinese',
+            'description': '经典红烧肉，肥而不腻，入口即化。',
+            'keywords': '红烧肉,经典,学生食堂',
+            'popularity': random.randint(80, 100),
+            'latitude': 39.9600,
+            'longitude': 116.3600,
+        },
+        {
+            'name': '麻辣香锅',
+            'restaurant': '风味食堂',
+            'attraction': flavor_canteen,
+            'price': 20.0,
+            'cuisine': 'chinese',
+            'description': '麻辣香锅，香辣可口，配料丰富。',
+            'keywords': '麻辣香锅,香辣,风味食堂',
+            'popularity': random.randint(80, 100),
+            'latitude': 39.9600,
+            'longitude': 116.3600,
+        },
+        {
+            'name': '炸鸡',
+            'restaurant': '综合食堂',
+            'attraction': comprehensive_canteen,
+            'price': 18.0,
+            'cuisine': 'western',
+            'description': '外酥里嫩，香脆可口。',
+            'keywords': '炸鸡,香脆,综合食堂',
+            'popularity': random.randint(80, 100),
+            'latitude': 39.9600,
+            'longitude': 116.3600,
+        },
+        {
+            'name': '牛肉面',
+            'restaurant': '学生食堂',
+            'attraction': student_canteen,
+            'price': 12.0,
+            'cuisine': 'chinese',
+            'description': '牛肉面，汤鲜味美，面条筋道。',
+            'keywords': '牛肉面,汤鲜,学生食堂',
+            'popularity': random.randint(80, 100),
+            'latitude': 39.9600,
+            'longitude': 116.3600,
+        },
+        {
+            'name': '寿司',
+            'restaurant': '风味食堂',
+            'attraction': flavor_canteen,
+            'price': 25.0,
+            'cuisine': 'japanese',
+            'description': '新鲜寿司，口感细腻。',
+            'keywords': '寿司,新鲜,风味食堂',
+            'popularity': random.randint(80, 100),
+            'latitude': 39.9600,
+            'longitude': 116.3600,
+        },
+        {
+            'name': '披萨',
+            'restaurant': '综合食堂',
+            'attraction': comprehensive_canteen,
+            'price': 30.0,
+            'cuisine': 'western',
+            'description': '意式披萨，芝士浓郁，配料丰富。',
+            'keywords': '披萨,芝士,综合食堂',
+            'popularity': random.randint(80, 100),
+            'latitude': 39.9600,
+            'longitude': 116.3600,
+        },
+    ]
+    
+    for food_data in foods:
+        Food.objects.create(**food_data)
+    
+    return redirect('food_recommendation')

@@ -21,6 +21,41 @@
             margin: 0;
             padding: 0;
             min-height: 100vh;
+            font-family: 'Roboto', Arial, sans-serif;
+        }
+        .top_nav {
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(60,64,67,0.08);
+            padding: 0 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            padding: 0 24px;
+        }
+        .nav-left a {
+            color: #1a73e8;
+            text-decoration: none;
+            font-size: 1.1rem;
+            margin-right: 32px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-left a.logo {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1765c1;
+            margin-right: 40px;
+        }
+        .nav-left a:hover {
+            color: #1765c1;
         }
         .attractions-container {
             display: flex;
@@ -143,20 +178,17 @@
     <!-- <script type="text/javascript" src="https://api.map.baidu.com/api?v=3.0&ak=您的密钥"></script> -->
 </head>
 <body>
-    <!-- 复用相同的导航栏 -->
     <nav class="top_nav">
         <div class="nav-container">
             <div class="nav-left">
                 <a href="{% url 'index' %}">首页</a>
                 <a href="{% url 'attractions' %}" class="logo">旅游系统</a>
                 <a href="{% url 'log' %}">日志</a>
-                <a href="{% url 'mine' %}">我的</a>
+                <a href="{% url 'food_recommendation' %}">美食推荐</a>
             </div>
             <div class="nav-right">
-                <div class="user-profile" id="userProfile">
-                    <div class="user-dropdown" id="userDropdown">
-                        <a href="{% url 'logout' %}" id="logoutBtn">退出登录</a>
-                    </div>
+                <div class="user-profile">
+                    <a href="{% url 'logout' %}" id="logoutBtn">退出登录</a>
                 </div>
             </div>
         </div>

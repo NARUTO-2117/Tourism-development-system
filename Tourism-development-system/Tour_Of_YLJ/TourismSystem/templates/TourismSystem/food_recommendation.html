@@ -1,0 +1,380 @@
+{% extends "TourismSystem/base.html" %}
+
+{% block content %}
+<style>
+body {
+    font-family: 'Roboto', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+.top_nav {
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(60,64,67,0.08);
+    padding: 0 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+.nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    padding: 0 24px;
+}
+.nav-left a {
+    color: #1a73e8;
+    text-decoration: none;
+    font-size: 1.1rem;
+    margin-right: 32px;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+.nav-left a.logo {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #1765c1;
+    margin-right: 40px;
+}
+.nav-left a:hover {
+    color: #1765c1;
+}
+.container {
+    max-width: 1100px;
+    margin: 40px auto 0 auto;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(60,64,67,0.12);
+    padding: 40px 36px 32px 36px;
+}
+.card {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(60,64,67,0.10);
+    border: none;
+}
+.card-title, h1, h5 {
+    color: #1a73e8;
+    font-weight: 700;
+}
+.btn-primary, .btn-success, .btn-warning {
+    border-radius: 6px;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(60,64,67,0.08);
+    transition: background 0.2s;
+}
+.btn-primary:hover, .btn-success:hover, .btn-warning:hover {
+    filter: brightness(0.95);
+}
+.form-select, .form-control {
+    border-radius: 8px;
+    border: 1px solid #e3e6ea;
+    background: #f8fafc;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+.form-select:focus, .form-control:focus {
+    border-color: #1a73e8;
+    background: #fff;
+}
+.card-img-top {
+    border-radius: 10px 10px 0 0;
+    object-fit: cover;
+}
+.card-body {
+    padding: 18px 16px 16px 16px;
+}
+.badge {
+    border-radius: 6px;
+    font-size: 0.95em;
+    padding: 4px 10px;
+}
+.bg-primary {
+    background: #1a73e8 !important;
+}
+.bg-success {
+    background: #34a853 !important;
+}
+.bg-warning {
+    background: #fbbc04 !important;
+}
+.text-warning {
+    color: #f6b100 !important;
+}
+.pagination .page-link {
+    border-radius: 6px;
+    color: #1a73e8;
+    border: 1px solid #e3e6ea;
+    margin: 0 2px;
+    background: #f8fafc;
+    transition: background 0.2s;
+}
+.pagination .page-link:hover {
+    background: #e3f0ff;
+}
+.pagination .active .page-link {
+    background: #1a73e8;
+    color: #fff;
+    border: none;
+}
+.alert-info {
+    background: #e3f0ff;
+    color: #1765c1;
+    border-radius: 8px;
+}
+#useLocation {
+    background: #34a853;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    padding: 8px 18px;
+    transition: background 0.2s;
+}
+#useLocation:hover {
+    background: #1a73e8;
+}
+/* 导航栏样式 */
+.navbar {
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(60,64,67,0.10);
+    border-radius: 12px;
+    padding: 12px 20px;
+    margin-bottom: 20px;
+}
+.navbar a {
+    color: #1a73e8;
+    text-decoration: none;
+    font-weight: 500;
+    margin: 0 10px;
+    transition: color 0.2s;
+}
+.navbar a:hover {
+    color: #1765c1;
+}
+.navbar a.logo {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+</style>
+<body>
+    <nav class="top_nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <a href="{% url 'index' %}">首页</a>
+                <a href="{% url 'attractions' %}" class="logo">旅游系统</a>
+                <a href="{% url 'log' %}">日志</a>
+                <a href="{% url 'food_recommendation' %}">美食推荐</a>
+            </div>
+            <div class="nav-right">
+                <div class="user-profile">
+                    <a href="{% url 'logout' %}" id="logoutBtn">退出登录</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-container">
+    <div class="container my-4">
+        <h1 class="text-center mb-4">北邮美食推荐</h1>
+        
+        <!-- 搜索和筛选表单 -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="get" action="{% url 'food_recommendation' %}" class="row g-3">
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <input type="text" class="form-control" name="query" value="{{ query }}" placeholder="搜索美食名称、餐厅或菜系...">
+                            <button class="btn btn-primary" type="submit">搜索</button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <select name="cuisine" class="form-select">
+                            {% for code, name in cuisine_choices %}
+                            <option value="{{ code }}" {% if cuisine == code %}selected{% endif %}>{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <select name="attraction_id" class="form-select">
+                            <option value="">全部位置</option>
+                            {% for attraction in attractions %}
+                            <option value="{{ attraction.id }}" {% if attraction_id == attraction.id|stringformat:"i" %}selected{% endif %}>
+                                {{ attraction.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <select name="sort_by" class="form-select">
+                            <option value="popularity" {% if sort_by == 'popularity' %}selected{% endif %}>按热度排序</option>
+                            <option value="rating" {% if sort_by == 'rating' %}selected{% endif %}>按评分排序</option>
+                            <option value="distance" {% if sort_by == 'distance' %}selected{% endif %}>按距离排序</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 美食列表 -->
+        <div class="row">
+            {% if page_obj %}
+                {% for food in page_obj %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ food.name }}</h5>
+                            <p class="card-text text-muted">{{ food.restaurant }}</p>
+                            
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <span class="badge bg-primary">{{ food.get_cuisine_display }}</span>
+                                    <span class="badge bg-success">¥{{ food.price }}</span>
+                                </div>
+                                <div>
+                                    <span class="text-warning">★</span> {{ food.rating|floatformat:1 }} ({{ food.rating_count }}条评价)
+                                </div>
+                            </div>
+                            
+                            <p class="card-text small">{{ food.description|truncatechars:100 }}</p>
+                            
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'food_detail' food.id %}" class="btn btn-outline-primary btn-sm">查看详情</a>
+                                <small class="text-muted">热度: {{ food.popularity }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12 text-center">
+                    <div class="alert alert-info">
+                        没有找到符合条件的美食，请尝试调整筛选条件。
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- 分页 -->
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="d-flex justify-content-center mt-4">
+            <nav aria-label="Page navigation">
+                <ul class="pagination">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1&sort_by={{ sort_by }}&cuisine={{ cuisine }}&query={{ query }}&attraction_id={{ attraction_id }}" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&sort_by={{ sort_by }}&cuisine={{ cuisine }}&query={{ query }}&attraction_id={{ attraction_id }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}&sort_by={{ sort_by }}&cuisine={{ cuisine }}&query={{ query }}&attraction_id={{ attraction_id }}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}&sort_by={{ sort_by }}&cuisine={{ cuisine }}&query={{ query }}&attraction_id={{ attraction_id }}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&sort_by={{ sort_by }}&cuisine={{ cuisine }}&query={{ query }}&attraction_id={{ attraction_id }}" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+        
+        <!-- 当前位置和距离计算 -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">使用当前位置</h5>
+                <p class="card-text">启用位置服务可以按照距离排序，获取离您最近的美食。</p>
+                <button id="useLocation" class="btn btn-success">使用我的位置</button>
+                <span id="locationStatus" class="ms-2"></span>
+            </div>
+        </div>
+        
+        <!-- 管理员工具 -->
+        <!-- {% if user.is_superuser %}
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">管理员工具</h5>
+                <a href="{% url 'load_demo_foods' %}" class="btn btn-warning">加载演示数据</a>
+            </div>
+        </div>
+        {% endif %} -->
+    </div>
+    </main>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 使用位置服务按钮
+        const useLocationBtn = document.getElementById('useLocation');
+        const locationStatus = document.getElementById('locationStatus');
+        
+        useLocationBtn.addEventListener('click', function() {
+            if (navigator.geolocation) {
+                locationStatus.textContent = "正在获取位置...";
+                
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    
+                    // 获取当前URL参数
+                    const urlParams = new URLSearchParams(window.location.search);
+                    
+                    // 添加位置参数
+                    urlParams.set('lat', lat);
+                    urlParams.set('lon', lon);
+                    
+                    // 重定向到带有位置信息的URL
+                    window.location.href = `${window.location.pathname}?${urlParams.toString()}`;
+                }, function(error) {
+                    let errorMsg = "无法获取位置信息";
+                    
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg = "用户拒绝了位置请求";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg = "位置信息不可用";
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg = "获取位置超时";
+                            break;
+                        case error.UNKNOWN_ERROR:
+                            errorMsg = "发生未知错误";
+                            break;
+                    }
+                    
+                    locationStatus.textContent = errorMsg;
+                });
+            } else {
+                locationStatus.textContent = "您的浏览器不支持地理定位";
+            }
+        });
+    });
+    </script>
+</body>
+{% endblock %} 

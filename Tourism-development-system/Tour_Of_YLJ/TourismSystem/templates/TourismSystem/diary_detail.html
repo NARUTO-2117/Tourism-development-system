@@ -24,7 +24,17 @@
         {% endif %}
     </div>
     <div class="diary-content" style="margin: 20px 0;">
-        <p>{{ diary.content|linebreaksbr }}</p>
+        <div class="diary-content-container">
+            <div class="compressed-content">
+                {{ diary.content|truncatechars:500|linebreaksbr }}
+            </div>
+            <div class="full-content" style="display: none;">
+                {{ diary.content|linebreaksbr }}
+            </div>
+            {% if diary.content|length > 500 %}
+                <button class="toggle-content">展开</button>
+            {% endif %}
+        </div>
     </div>
     <div class="diary-actions">
         <form method="post" action="/TourismSystem/diary/{{ diary.id }}/like/" class="like-form">
@@ -64,10 +74,53 @@
     font-size: 0.9em;
     opacity: 0.8;
 }
+
+.diary-content-container {
+    margin-top: 12px;
+}
+
+.compressed-content {
+    max-height: 15em;
+    overflow: hidden;
+    position: relative;
+}
+
+.full-content {
+    display: none;
+}
+
+.toggle-content {
+    background: none;
+    border: none;
+    color: #1a73e8;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0;
+    margin-top: 12px;
+    text-decoration: underline;
+}
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.toggle-content').forEach(button => {
+        button.addEventListener('click', function() {
+            const contentContainer = this.closest('.diary-content-container');
+            const compressedContent = contentContainer.querySelector('.compressed-content');
+            const fullContent = contentContainer.querySelector('.full-content');
+
+            if (fullContent.style.display === 'none') {
+                compressedContent.style.display = 'none';
+                fullContent.style.display = 'block';
+                this.textContent = '收起';
+            } else {
+                compressedContent.style.display = 'block';
+                fullContent.style.display = 'none';
+                this.textContent = '展开';
+            }
+        });
+    });
+
     const likeForm = document.querySelector('.like-form');
     const likeBtn = likeForm.querySelector('.like-btn');
     const likeCount = likeForm.querySelector('.like-count');

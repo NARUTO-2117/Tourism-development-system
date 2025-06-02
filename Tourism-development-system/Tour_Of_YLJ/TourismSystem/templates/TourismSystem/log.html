@@ -4,7 +4,7 @@
     {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>旅行日志 - 旅游系统</title>
+    <title>旅游日志 - 旅游系统</title>
     <link rel="stylesheet" href="{% static 'TourismSystem/style.css' %}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <style>
@@ -126,93 +126,114 @@
             margin-top: 24px;
         }
         .diary-card {
-            background: #fff;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(60,64,67,0.12);
-            transition: all 0.3s;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
         .diary-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 4px 12px rgba(60,64,67,0.16);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .diary-header {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .diary-title {
+            font-size: 1.2em;
+            color: #1765c1;
+            margin: 0;
+            font-weight: 600;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .diary-meta {
+            color: #666;
+            font-size: 0.9em;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .diary-meta span {
+            background: #f5f5f5;
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+        .diary-content {
+            flex: 1;
+            margin: 12px 0;
+            line-height: 1.6;
+            color: #444;
+            overflow: hidden;
+            position: relative;
+        }
+        .diary-content::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(transparent, white);
         }
         .diary-image-container {
-            position: relative;
-            height: 200px;
+            height: 180px;
             overflow: hidden;
+            border-radius: 6px;
+            margin: 12px 0;
         }
-        .diary-image {
+        .diary-image-container img {
             width: 100%;
             height: 100%;
             object-fit: cover;
             transition: transform 0.3s;
         }
-        .diary-card:hover .diary-image {
+        .diary-card:hover .diary-image-container img {
             transform: scale(1.05);
         }
-        .diary-image-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.4);
+        .diary-footer {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.3s;
+            margin-top: auto;
+            padding-top: 12px;
+            border-top: 1px solid #eee;
         }
-        .diary-card:hover .diary-image-overlay {
-            opacity: 1;
-        }
-        .view-more-btn {
-            color: #fff;
-            text-decoration: none;
-            padding: 8px 16px;
-            border: 2px solid #fff;
-            border-radius: 20px;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-        .view-more-btn:hover {
-            background: #fff;
-            color: #1a73e8;
-        }
-        .diary-content {
-            padding: 20px;
-        }
-        .diary-title {
-            color: #202124;
-            text-decoration: none;
-            font-size: 1.2rem;
-            font-weight: 500;
-            margin-bottom: 12px;
-            display: block;
-        }
-        .diary-title:hover {
-            color: #1a73e8;
-        }
-        .diary-meta {
+        .diary-stats {
             display: flex;
-            gap: 16px;
-            margin-bottom: 12px;
-            color: #5f6368;
-            font-size: 0.9rem;
+            gap: 12px;
+            color: #666;
+            font-size: 0.9em;
         }
-        .meta-item {
+        .diary-stats span {
             display: flex;
             align-items: center;
             gap: 4px;
         }
-        .meta-item i {
-            color: #1a73e8;
+        .view-detail-btn {
+            padding: 8px 16px;
+            background: #1765c1;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: background 0.2s;
         }
-        .diary-excerpt {
-            color: #5f6368;
-            font-size: 0.95rem;
-            line-height: 1.5;
-            margin-top: 12px;
+        .view-detail-btn:hover {
+            background: #1557b0;
         }
         .pagination {
             display: flex;
@@ -248,6 +269,85 @@
                 grid-template-columns: 1fr;
             }
         }
+        .search-container {
+            margin: 20px 0;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .search-form {
+            display: flex;
+            gap: 10px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .search-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .search-input:focus {
+            border-color: #1765c1;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(23, 101, 193, 0.1);
+        }
+        .search-btn {
+            padding: 12px 24px;
+            background: #1765c1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        .search-btn:hover {
+            background: #1557b0;
+        }
+        .sort-options {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        .sort-btn {
+            padding: 6px 12px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .sort-btn.active {
+            background: #1765c1;
+            color: white;
+            border-color: #1765c1;
+        }
+        .search-suggestions {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            width: 100%;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-top: 4px;
+        }
+        .suggestion-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .suggestion-item:hover {
+            background: #f5f5f5;
+        }
     </style>
 </head>
 <body>
@@ -257,13 +357,7 @@
                 <a href="{% url 'index' %}">首页</a>
                 <a href="{% url 'attractions' %}" class="logo">旅游系统</a>
                 <a href="{% url 'log' %}">日志</a>
-                <a href="{% url 'mine' %}">我的</a>
-            </div>
-            <div class="nav-center">
-                <form class="search-box" method="get" action="{% url 'log' %}">
-                    <input type="text" name="keyword" placeholder="搜索目的地..." value="{{ keyword }}">
-                    <button type="submit"><i class="fas fa-search"></i></button>
-                </form>
+                <a href="{% url 'food_recommendation' %}">美食推荐</a>
             </div>
             <div class="nav-right">
                 <div class="user-profile">
@@ -274,46 +368,48 @@
     </nav>
 
     <main class="main-container">
-        <div class="filter-bar">
-            <select name="sort" onchange="this.form.submit()" form="sort-form">
-                <option value="popularity" {% if sort == 'popularity' %}selected{% endif %}>按热度排序</option>
-                <option value="rating" {% if sort == 'rating' %}selected{% endif %}>按评分排序</option>
-                <option value="time" {% if sort == 'time' %}selected{% endif %}>按时间排序</option>
-            </select>
-            <form id="sort-form" method="get" action="{% url 'log' %}">
-                <input type="hidden" name="keyword" value="{{ keyword }}">
+        <div class="search-container">
+            <form method="get" class="search-form">
+                <input type="text" name="keyword" class="search-input" placeholder="搜索标题、内容或景点..." value="{{ keyword }}" id="search-input">
+                <button type="submit" class="search-btn">搜索</button>
             </form>
+            <div class="sort-options">
+                <a href="?sort=popularity{% if keyword %}&keyword={{ keyword }}{% endif %}" 
+                   class="sort-btn {% if sort == 'popularity' %}active{% endif %}">按热度</a>
+                <a href="?sort=rating{% if keyword %}&keyword={{ keyword }}{% endif %}" 
+                   class="sort-btn {% if sort == 'rating' %}active{% endif %}">按评分</a>
+                <a href="?sort=time{% if keyword %}&keyword={{ keyword }}{% endif %}" 
+                   class="sort-btn {% if sort == 'time' %}active{% endif %}">按时间</a>
+            </div>
         </div>
 
         {% if page_obj %}
             <div class="diary-grid">
                 {% for diary in page_obj %}
                     <div class="diary-card">
+                        <div class="diary-header">
+                            <h3 class="diary-title">{{ diary.title }}</h3>
+                            <div class="diary-meta">
+                                <span>作者：{{ diary.author.username }}</span>
+                                <span>景点：{{ diary.attraction.name }}</span>
+                                <span>评分：{{ diary.rating }}</span>
+                            </div>
+                        </div>
                         {% if diary.image %}
                             <div class="diary-image-container">
-                                <img src="{{ diary.image.url }}" alt="日记图片" class="diary-image">
-                                <div class="diary-image-overlay">
-                                    <a href="{% url 'diary_detail' diary.id %}" class="view-more-btn">
-                                        <i class="fas fa-eye"></i> 查看详情
-                                    </a>
-                                </div>
+                                <img src="{{ diary.image.url }}" alt="{{ diary.title }}">
                             </div>
                         {% endif %}
                         <div class="diary-content">
-                            <a href="{% url 'diary_detail' diary.id %}" class="diary-title">{{ diary.title }}</a>
-                            <div class="diary-meta">
-                                <span class="meta-item">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    {{ diary.attraction.name }}
-                                </span>
-                                <span class="meta-item">
-                                    <i class="fas fa-user"></i>
-                                    {{ diary.author.username }}
-                                </span>
+                            {{ diary.get_content|truncatewords:30 }}
+                        </div>
+                        <div class="diary-footer">
+                            <div class="diary-stats">
+                                <span>👍 {{ diary.likes.count }}</span>
+                                <span>👁️ {{ diary.views }}</span>
+                                <span>💬 {{ diary.diary_comments.count }}</span>
                             </div>
-                            <div class="diary-excerpt">
-                                {{ diary.content|truncatechars:100 }}
-                            </div>
+                            <a href="{% url 'diary_detail' diary.id %}" class="view-detail-btn">查看详情</a>
                         </div>
                     </div>
                 {% endfor %}
@@ -321,17 +417,15 @@
 
             <div class="pagination">
                 {% if page_obj.has_previous %}
-                    <a href="?page=1{% if keyword %}&keyword={{ keyword }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">&laquo; 首页</a>
-                    <a href="?page={{ page_obj.previous_page_number }}{% if keyword %}&keyword={{ keyword }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">上一页</a>
+                    <a href="?page=1{% if sort %}&sort={{ sort }}{% endif %}{% if keyword %}&keyword={{ keyword }}{% endif %}" class="page-link">&laquo; 首页</a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% if sort %}&sort={{ sort }}{% endif %}{% if keyword %}&keyword={{ keyword }}{% endif %}" class="page-link">上一页</a>
                 {% endif %}
 
-                <span class="current">
-                    第 {{ page_obj.number }} 页，共 {{ page_obj.paginator.num_pages }} 页
-                </span>
+                <span class="page-link active">{{ page_obj.number }}</span>
 
                 {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}{% if keyword %}&keyword={{ keyword }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">下一页</a>
-                    <a href="?page={{ page_obj.paginator.num_pages }}{% if keyword %}&keyword={{ keyword }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">末页 &raquo;</a>
+                    <a href="?page={{ page_obj.next_page_number }}{% if sort %}&sort={{ sort }}{% endif %}{% if keyword %}&keyword={{ keyword }}{% endif %}" class="page-link">下一页</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}{% if sort %}&sort={{ sort }}{% endif %}{% if keyword %}&keyword={{ keyword }}{% endif %}" class="page-link">末页 &raquo;</a>
                 {% endif %}
             </div>
         {% else %}
@@ -345,5 +439,49 @@
 
     <script src="{% static 'TourismSystem/auth.js' %}"></script>
     <script src="{% static 'TourismSystem/log.js' %}"></script>
+    <script>
+        // 搜索建议功能
+        const searchInput = document.getElementById('search-input');
+        const suggestions = document.createElement('div');
+        suggestions.className = 'search-suggestions';
+        searchInput.parentNode.appendChild(suggestions);
+
+        const attractions = {{ attractions|safe }};
+
+        searchInput.addEventListener('input', function() {
+            const value = this.value.toLowerCase();
+            if (value.length < 1) {
+                suggestions.style.display = 'none';
+                return;
+            }
+
+            const matches = attractions.filter(attraction => 
+                attraction.toLowerCase().includes(value)
+            );
+
+            if (matches.length > 0) {
+                suggestions.innerHTML = matches
+                    .map(match => `<div class="suggestion-item">${match}</div>`)
+                    .join('');
+                suggestions.style.display = 'block';
+            } else {
+                suggestions.style.display = 'none';
+            }
+        });
+
+        suggestions.addEventListener('click', function(e) {
+            if (e.target.classList.contains('suggestion-item')) {
+                searchInput.value = e.target.textContent;
+                suggestions.style.display = 'none';
+            }
+        });
+
+        // 点击其他地方时隐藏建议
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !suggestions.contains(e.target)) {
+                suggestions.style.display = 'none';
+            }
+        });
+    </script>
 </body>
 </html>

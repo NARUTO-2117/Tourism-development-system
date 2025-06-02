@@ -16,4 +16,11 @@ urlpatterns = [
     path('api/diaries/search/', views.search_diaries, name='search_diaries'),
     path('api/attractions/search/', views.search_attractions, name='search_attractions'),
     path('search_places/', views.search_places, name='search_places'),
+    
+    # 美食推荐相关URL
+    path('foods/', views.food_recommendation, name='food_recommendation'),
+    path('foods/<int:food_id>/', views.food_detail, name='food_detail'),
+    path('foods/<int:food_id>/review/', views.add_food_review, name='add_food_review'),
+    path('api/foods/search/', views.search_foods, name='search_foods'),
+    path('load_demo_foods/', views.load_demo_foods, name='load_demo_foods'),
 ]

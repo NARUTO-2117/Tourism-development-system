@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ attraction.name }} - 旅游系统</title>
+    <title>{{ spot.name }} - 旅游系统</title>
     <link rel="stylesheet" href="{% static 'TourismSystem/style.css' %}">
     <link rel="stylesheet" href="{% static 'TourismSystem/attractions.css' %}">
     <style>
@@ -122,6 +122,84 @@
             box-shadow: 0 2px 8px rgba(60,64,67,0.10);
             background: #f8fafc;
         }
+        /* 美食推荐部分样式 */
+        .food-recommendations {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #e3e6ea;
+        }
+        .food-recommendations h2 {
+            font-size: 1.2rem;
+            color: #1765c1;
+            margin-bottom: 16px;
+        }
+        .food-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .food-card {
+            background: #f9fbfd;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(60,64,67,0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .food-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 12px rgba(60,64,67,0.12);
+        }
+        .food-card-img {
+            height: 160px;
+            background-size: cover;
+            background-position: center;
+            background-color: #eee;
+        }
+        .food-card-content {
+            padding: 16px;
+        }
+        .food-card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1a73e8;
+            margin: 0 0 8px 0;
+        }
+        .food-card-meta {
+            display: flex;
+            justify-content: space-between;
+            color: #5f6368;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        .food-card-rating {
+            color: #f6b100;
+        }
+        .food-card-desc {
+            color: #444;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            max-height: 60px;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            margin-bottom: 12px;
+        }
+        .view-all-foods {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #1a73e8;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .view-all-foods:hover {
+            background: #1765c1;
+        }
         @media (max-width: 1000px) {
             .attraction-detail-container {
                 padding: 24px 8vw;
@@ -145,7 +223,8 @@
                 <a href="{% url 'index' %}">首页</a>
                 <a href="{% url 'attractions' %}" class="logo">旅游系统</a>
                 <a href="{% url 'log' %}">日志</a>
-                <a href="{% url 'mine' %}">我的</a>
+                <!-- <a href="{% url 'mine' %}">我的</a> -->
+                <a href="{% url 'food_recommendation' %}">美食推荐</a>
             </div>
             <div class="nav-right">
                 <div class="user-profile">
@@ -158,27 +237,27 @@
     <!-- 景点详情内容 -->
     <main class="attraction-detail-container">
         <div class="attraction-header">
-            <h1>{{ attraction.name }}</h1>
+            <h1>{{ spot.name }}</h1>
             <div class="attraction-meta">
-                <span class="category">分类：{{ attraction.get_category_display }}</span>
-                <span class="epithet">称号：{{ attraction.epithet }}</span>
-                <span class="popularity">人气：{{ attraction.popularity }}</span>
-                <span class="rating">评分：{{ attraction.rating }}/5 ({{ attraction.rating_count }}人评分)</span>
-                <span class="keywords">关键字：{{ attraction.keywords }}</span>
+                <span class="category">分类：{{ spot.get_category_display }}</span>
+                <span class="epithet">称号：{{ spot.epithet }}</span>
+                <span class="popularity">人气：{{ spot.popularity }}</span>
+                <span class="rating">评分：{{ spot.rating }}/5 ({{ spot.rating_count }}人评分)</span>
+                <span class="keywords">关键字：{{ spot.keywords }}</span>
             </div>
         </div>
 
         <div class="attraction-content">
             <div class="attraction-description">
                 <h2>景点介绍</h2>
-                <p>{{ attraction.description|default:"暂无简介" }}</p>
+                <p>{{ spot.description|default:"暂无简介" }}</p>
             </div>
 
             <div class="attraction-images">
                 <h2>景点图片</h2>
                 <div class="image-gallery">
-                    {% if attraction.cover %}
-                        <img src="{{ attraction.cover.url }}" alt="封面图">
+                    {% if spot.cover %}
+                        <img src="{{ spot.cover.url }}" alt="封面图">
                     {% endif %}
                     {% for diary in diaries %}
                         {% if diary.image %}
@@ -190,11 +269,44 @@
 
             <div style="margin: 24px 0; display: flex; gap: 12px;">
                 {% if user_diary %}
-                    <a href="{% url 'upload_diary' spot_id=attraction.id %}" class="btn btn-warning">修改我的日记</a>
+                    <a href="{% url 'upload_diary' spot_id=spot.id %}" class="btn btn-warning">修改我的日记</a>
                 {% else %}
-                    <a href="{% url 'upload_diary' spot_id=attraction.id %}" class="btn btn-primary">上传日记</a>
+                    <a href="{% url 'upload_diary' spot_id=spot.id %}" class="btn btn-primary">上传日记</a>
                 {% endif %}
                 <a href="{% url 'attractions' %}" class="btn btn-primary">去这里</a>
+            </div>
+
+            <!-- 美食推荐部分 -->
+            <div class="food-recommendations">
+                <h2>附近美食推荐</h2>
+                {% if nearby_foods %}
+                <div class="food-cards">
+                    {% for food in nearby_foods %}
+                    <a href="{% url 'food_detail' food.id %}" class="food-card" style="text-decoration: none;">
+                        {% if food.image %}
+                        <div class="food-card-img" style="background-image: url('{{ food.image.url }}');"></div>
+                        {% else %}
+                        <div class="food-card-img" style="background-image: url('{% static 'TourismSystem/images/default_food.jpg' %}');"></div>
+                        {% endif %}
+                        <div class="food-card-content">
+                            <h3 class="food-card-title">{{ food.name }}</h3>
+                            <div class="food-card-meta">
+                                <span>{{ food.restaurant }}</span>
+                                <span class="food-card-rating">★ {{ food.rating|floatformat:1 }}</span>
+                            </div>
+                            <div class="food-card-meta">
+                                <span>{{ food.get_cuisine_display }}</span>
+                                <span>¥{{ food.price }}</span>
+                            </div>
+                            <p class="food-card-desc">{{ food.description|truncatechars:80 }}</p>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                <a href="{% url 'food_recommendation' %}?attraction_id={{ spot.id }}" class="view-all-foods">查看更多美食</a>
+                {% else %}
+                <p>暂无附近美食信息</p>
+                {% endif %}
             </div>
 
             <hr>
