@@ -1,6 +1,22 @@
 [
   {
     "id": "user_001",
+    "username": "Tom",
+    "password": "123456",
+    "interests": [
+      "校园",
+      "景点"
+    ],
+    "favoriteCategories": [
+      "景区",
+      "校园"
+    ],
+    "visitHistory": [],
+    "ratingHistory": [],
+    "diaryRatingHistory": []
+  },
+  {
+    "id": "user_001",
     "username": "张三",
     "password": "123456",
     "interests": [

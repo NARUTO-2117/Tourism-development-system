@@ -6,6 +6,45 @@
     let routeFacilities = [];
     let routeBuildings = [];
 
+    // 定义不同交通工具的理想速度（米/秒）
+    const VEHICLE_SPEEDS = {
+        '步行': 1.4,    // 约5公里/小时
+        '自行车': 4.2,  // 约15公里/小时
+        '电瓶车': 8.3   // 约30公里/小时
+    };
+
+    // 获取道路类型对特定交通工具的速度影响因子
+    function getRoadTypeFactor(roadType, vehicle) {
+        const factors = {
+            '步行道': {
+                '步行': 1.0,
+                '自行车': 0.5,  // 自行车在步行道上速度受限
+                '电瓶车': 0.0   // 电瓶车不允许在步行道上行驶
+            },
+            '校园道路': {
+                '步行': 1.0,
+                '自行车': 0.8,  // 校园道路上自行车速度略受限
+                '电瓶车': 0.0   // 电瓶车不允许在校园道路上行驶
+            },
+            '主路': {
+                '步行': 0.8,    // 主路上步行速度略受限
+                '自行车': 1.0,
+                '电瓶车': 1.0
+            },
+            '连接道路': {
+                '步行': 1.0,
+                '自行车': 0.8,
+                '电瓶车': 0.0
+            },
+            '设施连接道路': {
+                '步行': 1.0,
+                '自行车': 0.8,
+                '电瓶车': 0.0
+            }
+        };
+        return factors[roadType][vehicle] || 0;
+    }
+
     // 初始化
     async function initRoutePlanning() {
         try {
@@ -554,11 +593,6 @@
                     break;
             }
 
-            // 计算实际速度（考虑拥堵率）
-            const actualSpeed = road.idealSpeed * (1 - road.congestionRate);
-            // 计算时间（秒）= 距离（米）/ 速度（米/秒）
-            const time = road.distance / actualSpeed;
-
             // 为每个允许的交通工具添加边
             allowedVehicles.forEach(vehicle => {
                 if (!graph.get(road.from).has(road.to)) {
@@ -567,6 +601,16 @@
                 if (!graph.get(road.to).has(road.from)) {
                     graph.get(road.to).set(road.from, new Map());
                 }
+
+                // 使用交通工具特定的速度
+                const vehicleSpeed = VEHICLE_SPEEDS[vehicle];
+                // 考虑道路类型对速度的影响
+                const roadTypeFactor = getRoadTypeFactor(road.roadType, vehicle);
+                // 计算实际速度
+                const actualSpeed = vehicleSpeed * roadTypeFactor * (1 - road.congestionRate);
+                // 计算时间
+                const time = road.distance / actualSpeed;
+
                 graph.get(road.from).get(road.to).set(vehicle, time);
                 graph.get(road.to).get(road.from).set(vehicle, time);
             });
@@ -731,9 +775,25 @@
                     <p>预计用时: ${formatTime(segment.time)}</p>
                     <div class="vehicle-changes">
                         <h5>交通工具变化：</h5>
-                        ${segment.vehicleChanges.map(change => `
-                            <p>在 ${getLocationName(change.location)} 使用 ${change.vehicle}</p>
-                        `).join('')}
+                        ${segment.vehicleChanges.map((change, i) => {
+                            const nextChange = segment.vehicleChanges[i + 1];
+                            const road = routeRoads.find(r => 
+                                (r.from === change.location && r.to === nextChange?.location) ||
+                                (r.from === nextChange?.location && r.to === change.location)
+                            );
+                            const speed = VEHICLE_SPEEDS[change.vehicle];
+                            const speedKmh = (speed * 3.6).toFixed(1); // 转换为公里/小时
+                            return `
+                                <div class="vehicle-change">
+                                    <p>在 ${getLocationName(change.location)} 使用 ${change.vehicle}</p>
+                                    <p class="vehicle-details">
+                                        - 基础速度: ${speedKmh} 公里/小时
+                                        ${road ? `- 道路类型: ${road.roadType}` : ''}
+                                        ${road ? `- 拥堵率: ${(road.congestionRate * 100).toFixed(0)}%` : ''}
+                                    </p>
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
                 </div>
             `;
@@ -742,6 +802,39 @@
         html += '</div>';
         routeDetails.innerHTML = html;
     }
+
+    // 添加样式
+    const style = document.createElement('style');
+    style.textContent = `
+        .vehicle-change {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+        .vehicle-details {
+            margin: 5px 0 0 20px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .route-segment {
+            margin: 15px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .route-summary {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .route-summary p {
+            margin: 5px 0;
+            font-size: 1.1em;
+        }
+    `;
+    document.head.appendChild(style);
 
     // 导出函数
     window.routePlanning = {

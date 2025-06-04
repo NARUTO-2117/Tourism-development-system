@@ -1106,7 +1106,6 @@ def add_food_review(request, food_id):
     
     return redirect('food_detail', food_id=food.id)
 
-# 伪造美食数据
 @login_required
 def load_demo_foods(request):
     # 清空现有数据
@@ -1197,3 +1196,94 @@ def load_demo_foods(request):
         Food.objects.create(**food_data)
     
     return redirect('food_recommendation')
+
+#编辑距离的模糊搜索
+def vector_fuzzy_search(request):
+    # 假设数据库中存储的向量数据 (实际应用中可能从数据库获取)
+    stored_vectors = {
+        "item1": np.array([0.1, 0.2, 0.3, 0.4]),
+        "item2": np.array([0.4, 0.3, 0.2, 0.1]),
+        "item3": np.array([0.2, 0.2, 0.2, 0.2]),
+    }
+    
+    # 获取用户查询向量 (实际应用中可能通过API接收)
+    query_vector = np.array([0.15, 0.25, 0.35, 0.45])
+    
+    results = {}
+    for item_id, vector in stored_vectors.items():
+        similarity = cosine_similarity([query_vector], [vector])[0][0]
+        results[item_id] = similarity
+    
+    # 按相似度排序 (降序)
+    sorted_results = sorted(results.items(), key=lambda x: x[1], reverse=True)
+    
+    # 设置相似度阈值，返回模糊匹配结果
+    threshold = 0.8
+    fuzzy_matches = [{"item_id": item[0], "similarity": item[1]} 
+                     for item in sorted_results if item[1] >= threshold]
+    
+    return JsonResponse({"results": fuzzy_matches})
+
+#快排
+@require_http_methods(["POST"])
+def quick_sort(request):
+    try:
+        # 从请求中获取待排序的数组
+        data = request.json()
+        array = data.get('array', [])
+        
+        # 验证输入是否为列表且元素可比较
+        if not isinstance(array, list):
+            return JsonResponse({'error': 'Input must be a list'}, status=400)
+        
+        # 快速排序实现
+        def partition(arr, low, high):
+            pivot = arr[high]
+            i = low - 1
+            for j in range(low, high):
+                if arr[j] <= pivot:
+                    i += 1
+                    arr[i], arr[j] = arr[j], arr[i]
+            arr[i + 1], arr[high] = arr[high], arr[i + 1]
+            return i + 1
+        
+        def quick_sort_recursive(arr, low, high):
+            if low < high:
+                pi = partition(arr, low, high)
+                quick_sort_recursive(arr, low, pi - 1)
+                quick_sort_recursive(arr, pi + 1, high)
+        
+        # 复制原数组避免修改原始数据
+        sorted_array = array.copy()
+        quick_sort_recursive(sorted_array, 0, len(sorted_array) - 1)
+        
+        return JsonResponse({
+            'original': array,
+            'sorted': sorted_array
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+#堆排序
+def selection_sort_view(request):
+    # 示例数据：待排序的列表
+    unsorted_list = [64, 25, 12, 22, 11]
+    
+    # 选择排序算法实现
+    n = len(unsorted_list)
+    for i in range(n):
+        # 寻找未排序部分的最小元素
+        min_idx = i
+        for j in range(i+1, n):
+            if unsorted_list[j] < unsorted_list[min_idx]:
+                min_idx = j
+        
+        # 交换找到的最小元素与未排序部分的第一个元素
+        unsorted_list[i], unsorted_list[min_idx] = unsorted_list[min_idx], unsorted_list[i]
+    
+    # 返回排序结果
+    return JsonResponse({
+        'original_data': [64, 25, 12, 22, 11],
+        'sorted_data': unsorted_list
+    })
